@@ -1,0 +1,124 @@
+### 🌿 Branch 2: `feature/home-and-tutorial`
+
+**Goal:** Build the Home Page, the **Game Mode Selection Modals** (with API connections for Match/Tournament creation), and the Tutorial.
+
+---
+
+### 1. UI Pages & Components
+
+#### **A. Home Page (`/home`)**
+*   **Header:**
+    *   Game Logo ("Bulls, Cows & Shit").
+    *   User Greeting: "Welcome, **[Username]**".
+    *   (Settings button removed).
+*   **Main Menu (Vertical Stack):**
+    1.  📱 **PASS & PLAY** -> Direct link to `/setup/local`.
+    2.  ⚔️ **VS FRIEND** -> Opens **Online Menu Modal**.
+    3.  🏆 **TOURNAMENT** -> Opens **Tournament Menu Modal**.
+*   **Footer:**
+    *   ❓ **How to Play** (Triggers Tutorial Overlay).
+    *   👤 **My Profile** (Links to `/profile`).
+
+#### **B. The "Vs Friend" Modal (Online Menu)**
+*   **Tab 1: Match Code (Default)**
+    *   **Section A (Create Room):**
+        *   Button `[ ➕ Generate Code ]`.
+        *   *Result:* Calls API -> Displays 4-digit code (e.g., "X9P2") -> Changes to "Waiting..." state.
+    *   **Section B (Join Room):**
+        *   Input Field `[ Enter 4-Digit Code ]`.
+        *   Button `[ Join ]`.
+*   **Tab 2: Invite Friend**
+    *   **List:** Shows Friends from profile (Green dot = Online).
+    *   **Action:** Button `[ 📩 Invite ]` next to name.
+        *   *Result:* Button changes to "Invited" -> Toast notification "Invitation Sent".
+
+#### **C. The "Tournament" Modal**
+*   **Option A: Create League**
+    *   Button: `[ Create Tournament Lobby ]`.
+    *   *Result:* Calls API -> Redirects to Tournament Lobby with a new Code.
+*   **Option B: Join League**
+    *   Input: `[ Enter Tournament Code ]`.
+    *   Button: `[ Join Lobby ]`.
+
+#### **D. Interactive Tutorial (`/tutorial`)**
+*   (Unchanged) Step-by-step wizard (Goal -> Rules -> Clues -> Practice).
+
+
+
+### **E. In-App Notification System (The Receiver's View)**
+
+*   **Component:** Global Notification Toast (Fixed at the Top of Screen).
+*   **Trigger:** Appears instantly when a friend sends an invite.
+*   **UI Layout:**
+    *   **Icon/Avatar:** The sender's profile picture.
+    *   **Text:** "**[FriendName]** challenged you!"
+    *   **Actions:**
+        *   **[ ✅ ACCEPT ]** -> Immediately triggers the "Join Room" API with the embedded code and redirects to the Lobby.
+        *   **[ ❌ REJECT ]** -> Dismisses the notification and (optional) sends a "Declined" status back to the sender.
+*   **Behavior:** This notification persists or "floats" over any page the user is currently visiting (Home, Profile, or Settings) so they never miss a challenge.
+
+**Screen D: User Profile (Dashboard)**
+*   **Display:** Username & Avatar.
+*   **Stats Panel:**
+    *   Total Games Played.
+    *   Wins / Losses / Draws.
+    *   Logic Rating (Elo Score).
+*   **Friends Panel:**
+    *   List of friends (Green dot = Online, Grey dot = Offline).
+    *   **Add Friend Button:** Opens a search bar to find users by exact Username.
+
+
+### 2. API Endpoints for this Branch
+
+We need to define the endpoints that these buttons will call. Even if the full game logic isn't ready, the **Room Creation** logic starts here.
+
+**1. Match Management APIs**
+*   `POST /api/match/create`:
+    *   **Input:** `{ format: "bestOf3", difficulty: "easy" }` (Defaults).
+    *   **Response:** `{ roomId: "X9P2", status: "waiting" }`.
+    *   *Usage:* Triggered by "Generate Code".
+*   `POST /api/match/join`:
+    *   **Input:** `{ roomId: "X9P2" }`.
+    *   **Response:** `{ success: true, matchData: ... }`.
+    *   *Usage:* Triggered by "Join Room".
+*   `POST /api/match/invite`:
+    *   **Input:** `{ friendId: "user_456", roomId: "X9P2" }`.
+    *   **Response:** `{ success: true }`.
+    *   *Usage:* Triggered by "Invite" button.
+
+**2. Tournament Management APIs**
+*   `POST /api/tournament/create`:
+    *   **Input:** `{ name: "My League" }`.
+    *   **Response:** `{ tournamentCode: "LEAGUE1", id: "t_123" }`.
+*   `POST /api/tournament/join`:
+    *   **Input:** `{ tournamentCode: "LEAGUE1" }`.
+    *   **Response:** `{ success: true, tournamentData: ... }`.
+
+---
+
+### 3. Database Schema Updates
+
+**Match Model (New):**
+```json
+{
+  "_id": "match_123",
+  "roomId": "X9P2", // Short code for sharing
+  "host": "user_id_A",
+  "guest": null, // Initially null until joined
+  "status": "waiting", // waiting, active, finished
+  "createdAt": "Timestamp"
+}
+```
+
+**Tournament Model (New):**
+```json
+{
+  "_id": "tourn_123",
+  "code": "LEAGUE1",
+  "host": "user_id_A",
+  "participants": ["user_id_A"],
+  "status": "lobby"
+}
+```
+
+---

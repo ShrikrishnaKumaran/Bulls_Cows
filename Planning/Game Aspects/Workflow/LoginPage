@@ -1,0 +1,50 @@
+### 🌿 Branch 1: `feature/auth-and-profile`
+
+**Goal:** Allow users to log in securely using just their email (Passwordless) and user name. The system automatically detects if they are a **New User** (Sign Up) or **Existing User** (Sign In) after verification.
+
+### 1. The Auth & Onboarding Flows
+
+**Screen A: The Gatekeeper (Shared Sign In / Sign Up)**
+*   **UI:** A clean screen asking only for **Email Address**.
+*   **Logic (The Split):**
+    *   **CASE 1: SIGN IN (Returning User):**
+        *   System checks DB: Email exists **AND** Username is set.
+        *   **Action:** Direct redirect to **Home Page**.
+    *   **CASE 2: SIGN UP (New User):**
+        *   System checks DB: Email is new .
+        *   **Action:** Send verification code to email and validate the otp entered by the user.
+        *   **Action:** Redirect to **Screen B (Username Setup)**.
+
+**Screen B: Username Setup (New Users Only)**
+*   **UI:** "Welcome! Let's set up your profile."
+*   **Input:** "Enter your Username".
+*   **Validation:**
+    *   Checks if the name is taken.
+    *   Enforces length (e.g., 3-12 chars).
+*   **Action:** `[ Start Game ]` -> Saves username to DB -> Redirects to **Tutorial**.
+
+---
+
+### 2. Database Schema (User Model)
+
+```json
+{
+  "_id": "user_123",
+  "email": "user@gmail.com", // Unique Index
+  "username": "BullMaster",  // Unique Index (Sparse/Nullable initially)
+  "createdAt": "2023-10-27T10:00:00Z",
+  "stats": {
+    "wins": 10,
+    "losses": 2,
+    "draws": 1,
+    "wdl":["wr","dr","lr"]
+  },
+  "friends": ["user_456", "user_789"]
+}
+```
+
+---
+
+
+
+---

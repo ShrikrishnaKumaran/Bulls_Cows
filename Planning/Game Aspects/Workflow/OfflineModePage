@@ -1,0 +1,133 @@
+### 🌿 Branch 3: `feature/pass-and-play-complete`
+
+**Goal:** Build the entire Offline Game loop: Setup -> Secret Entry -> Gameplay (Guess/Validate) -> Round Scoring -> Match Summary.
+
+---
+
+### 1. The Logic Engine (`utils/gameLogic.js`)
+
+We need a dedicated utility file to handle the math and rules.
+
+*   **`validateUniqueDigits(number)`**: Returns true/false.
+*   **`calculateBullsCows(secret, guess)`**: Returns `{ bulls, cows, shit }`.
+*   **`calculateRoundScore(attempts, timeBonus)`**:
+    *   *Formula:* `1000 + (EfficiencyTable[attempts]) + timeBonus`.
+    *   (Referencing your Section 9 docs: e.g., 4 attempts = +400pts).
+*   **`checkWinCondition(bulls, totalDigits)`**: Returns true if `bulls === totalDigits`.
+
+---
+
+### 2. The Complete Game Flow
+
+#### **Phase 1: Setup**
+*   **Screen:** P1 enters Name, selects Format (Best of 1/3/5), Digits (3/4), Difficulty.
+*   **Screen:** P1 sets Secret -> "Pass Device" -> P2 sets Secret.
+
+#### **Phase 2: The Loop (Guess -> Validate)**
+*   **Step A (Guessing):** Active Player uses Keypad to submit a guess.
+*   **Step B (Handoff):** Screen blocks: "Pass Device to Opponent to Validate".
+*   **Step C (Validation - Hard Mode):**
+    *   Opponent sees guess & their secret.
+    *   Inputs Bulls/Cows using Steppers.
+    *   Clicks **[Confirm]**.
+*   **Step D (Anti-Cheat):**
+    *   If **Wrong:** Red Shake + Penalty Flag.
+    *   If **Correct:** Proceed to Check Win.
+
+#### **Phase 3: The Round Result**
+*   **Trigger:** When `bulls === digits` (Winning Guess).
+*   **Screen: Round Summary**
+    *   **Visual:** Confetti + "🎉 [Player Name] Won!".
+    *   **Stats:** "Found [Secret] in [X] Attempts".
+    *   **Score Calculation:**
+        *   Base: 1000
+        *   Speed Bonus: +XXX
+        *   Attempts Bonus: +XXX
+        *   **Total Round Score: XXXX**
+*   **Action:**
+    *   If Match isn't over (e.g., Score is 1-0 in Best of 3) -> Button: **[ Next Round ]**.
+    *   If Match IS over (Score is 2-0) -> Button: **[ View Match Summary ]**.
+
+#### **Phase 4: Match Summary (Game Over)**
+*   **Screen:**
+    *   **Winner:** Big Avatar/Name of the Match Winner.
+    *   **Final Score:** e.g., "2 - 1".
+    *   **Badges:**
+        *   ⚡ **Speed Demon:** (Player with fastest average time).
+        *   🧠 **Logic Master:** (Player with fewest average attempts).
+*   **Actions:**
+    *   **[ 🔄 Rematch ]**: Restarts game with same settings/names.
+    *   **[ 🏠 Home ]**: Returns to Main Menu.
+
+---
+
+### 3. Local State Management
+
+Since this is offline, we hold the entire game state in a variable (React State / Redux).
+
+```javascript
+const offlineMatchState = {
+  // CONFIG
+  config: { mode: "HARD", bestOf: 3, digits: 3 },
+  
+  // MATCH PROGRESS
+  currentRound: 1,
+  scores: { p1: 0, p2: 0 }, // Wins per player (e.g., 2-1)
+  
+  // ROUND STATE (Reset every round)
+  secretNumbers: { p1: "123", p2: "890" },
+  activePlayer: "p1",
+  history: [], // FIFO Array
+  
+  // STATS (For badges)
+  totalTime: { p1: 0, p2: 0 },
+  totalAttempts: { p1: 0, p2: 0 }
+};
+```
+
+---
+
+### 4. API Endpoints
+
+We only call the backend **once** at the very end to save the logged-in user's activity.
+
+*   **`POST /api/user/record-local-match`**
+    *   **Input:**
+        ```json
+        {
+          "result": "WIN", // Did the logged-in user win the match?
+          "totalScore": 5000, // Sum of points
+          "matchDetails": {
+            "opponent": "GuestName",
+            "format": "BestOf3",
+            "difficulty": "Hard"
+          }
+        }
+        ```
+    *   **Action:** Updates user's "Total Games" and "Elo" (optional for offline).
+
+---
+
+### 5. Git Task List for `feature/pass-and-play-complete`
+
+**Logic & Math**
+1.  Implement `utils/scoring.js` (Calculate Points table).
+2.  Implement `utils/gameEngine.js` (Bulls/Cows calculator + Anti-Cheat).
+
+**UI Components**
+3.  **Setup Views:** Name inputs, Settings, Secret Number Inputs.
+4.  **Game Board:** HUD (Timer/Round), FIFO History List, Input Keypad.
+5.  **Validation View:** The specific UI with Steppers for Opponent Validation.
+6.  **Results View:**
+    *   **Round Over Modal:** Shows score breakdown + "Next Round" button.
+    *   **Match Summary Page:** Shows Final Winner + Badges + Rematch button.
+
+**State Integration**
+7.  Connect the "Next Round" button to reset the board (New Secret Numbers, Clear History) but keep the Match Score.
+8.  Implement the "Best of X" check to trigger the Match Summary when someone wins majority.
+
+---
+
+**This plan covers the ENTIRE offline experience.** Once merged, you can play a full tournament with a friend on one phone.
+
+**Shall we proceed to Branch 4 (Online Backend)?**
