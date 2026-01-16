@@ -39,7 +39,7 @@ const RegisterForm = () => {
         email: formData.email,
         password: formData.password,
       });
-      navigate('/');
+      navigate('/home');
     } catch (err) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -48,9 +48,9 @@ const RegisterForm = () => {
   };
 
   return (
-    <div className="register-form">
-      <h2>Register</h2>
-      {error && <div className="error">{error}</div>}
+    <div className="register-form" style={{ padding: '40px', maxWidth: '400px', margin: '50px auto', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Register</h2>
+      {error && <div className="error" style={{ padding: '10px', marginBottom: '15px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '4px' }}>{error}</div>}
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -59,6 +59,7 @@ const RegisterForm = () => {
           value={formData.username}
           onChange={handleChange}
           required
+          style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px' }}
         />
         <input
           type="email"
@@ -67,6 +68,7 @@ const RegisterForm = () => {
           value={formData.email}
           onChange={handleChange}
           required
+          style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px' }}
         />
         <input
           type="password"
@@ -75,6 +77,7 @@ const RegisterForm = () => {
           value={formData.password}
           onChange={handleChange}
           required
+          style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px' }}
         />
         <input
           type="password"
@@ -83,11 +86,23 @@ const RegisterForm = () => {
           value={formData.confirmPassword}
           onChange={handleChange}
           required
+          style={{ width: '100%', padding: '10px', marginBottom: '15px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px' }}
         />
-        <button type="submit" disabled={loading}>
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', fontSize: '16px', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
           {loading ? 'Registering...' : 'Register'}
         </button>
       </form>
+      <div style={{ marginTop: '20px', textAlign: 'center' }}>
+        <p style={{ color: '#666', fontSize: '14px' }}>
+          Already have an account?{' '}
+          <button 
+            onClick={() => navigate('/login')}
+            style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', textDecoration: 'underline', fontSize: '14px' }}
+          >
+            Login here
+          </button>
+        </p>
+      </div>
     </div>
   );
 };

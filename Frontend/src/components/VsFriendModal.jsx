@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function VsFriendModal({ onClose }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('matchCode');
   const [roomCode, setRoomCode] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
@@ -8,6 +10,13 @@ function VsFriendModal({ onClose }) {
   const [joinCodeInput, setJoinCodeInput] = useState('');
 
   const handleGenerateCode = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login to create a room');
+      navigate('/login');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/match/create', {
@@ -34,6 +43,13 @@ function VsFriendModal({ onClose }) {
   };
 
   const handleJoinRoom = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login to join a room');
+      navigate('/login');
+      return;
+    }
+
     if (!joinCodeInput.trim()) {
       alert('Please enter a room code');
       return;
