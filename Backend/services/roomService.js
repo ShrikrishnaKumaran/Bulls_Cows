@@ -1,0 +1,129 @@
+const Room = require('../models/Room');
+
+// Generate unique room code (4 characters)
+const generateRoomCode = () => {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return code;
+};
+
+// Create a new room
+const createRoom = async (hostId, settings = {}) => {
+  const roomCode = generateRoomCode();
+
+  // Check if room code already exists
+  const existingRoom = await Room.findOne({ roomCode });
+  if (existingRoom) {
+    // Recursively generate a new code
+    return createRoom(hostId, settings);
+  }
+
+  const room = await Room.create({
+    roomCode,
+    host: hostId,
+    players: [hostId],
+    playerCount: 1,
+    mode: settings.mode || 'online',
+    format: settings.format || 3,
+    digits: settings.digits || 4,
+    difficulty: settings.difficulty || 'easy',
+    status: 'waiting'
+  });
+
+  return room;
+};
+
+// Join an existing room (Match)
+// Join an existing room
+const joinRoom = async (roomCode, playerId) => {
+  const room = await Room.findOne({ roomCode });
+
+  if (!room) {
+    throw new Error('Room not found');
+  }
+
+  if (room.status !== 'waiting') {
+    throw new Error('Room is not available');
+  }
+
+  if (room.playerCount >= 2) {
+    throw new Error('Room is full');
+  }
+
+  if (room.players.some(p => p.toString() === playerId.toString())) {
+    throw new Error('Player already in room');
+  }
+
+  room.players.push(playerId);
+  room.playerCount = room.players.length;
+  room.status = 'active'; // Start game when second player joins
+
+  await room.save();
+  return room;
+};
+
+// Leave a room
+const leaveRoom = async (roomCode, playerId) => {
+  const room = await Room.findOne({ roomCode });
+
+  if (!room) {
+    throw new Error('Room not found');
+  }
+
+  // If host leaves, delete the room
+  if (room.host.toString() === playerId.toString()) {
+    await Room.deleteOne({ roomCode });
+    return { deleted: true };
+  }
+
+  // Remove player from room
+  room.players = room.players.filter(p => p.toString() !== playerId.toString());
+  room.playerCount = room.players.length;
+  
+  // Set back to waiting if only host remains
+  if (room.playerCount === 1) {
+    room.status = 'waiting';
+  }
+
+  await room.save();
+  return room;
+};
+
+// Get room by code
+const getRoomByCode = async (roomCode) => {
+  const room = await Room.findOne({ roomCode })
+    .populate('host', 'username')
+    .populate('players', 'username');
+
+  if (!room) {
+    throw new Error('Room not found');
+  }
+
+  return room;
+};
+
+// Update room status
+const updateRoomStatus = async (roomCode, status) => {
+  const room = await Room.findOne({ roomCode });
+
+  if (!room) {
+    throw new Error('Room not found');
+  }
+
+  room.status = status;
+  await room.save();
+
+  return room;
+};
+
+module.exports = {
+  generateRoomCode,
+  createRoom,
+  joinRoom,
+  leaveRoom,
+  getRoomByCode,
+  updateRoomStatus,
+};
