@@ -7,6 +7,8 @@ import CreateRoom from './features/lobby/CreateRoom'
 import JoinRoom from './features/lobby/JoinRoom'
 import RoomWaiting from './features/lobby/RoomWaiting'
 import UserProfile from './features/profile/UserProfile'
+import PassAndPlaySetup from './components/PassAndPlaySetup'
+import OfflineGame from './components/OfflineGame'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -28,6 +30,8 @@ function App() {
         <Route path="/register" element={<RegisterForm />} />
         <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+        <Route path="/offline/setup" element={<PassAndPlaySetup />} />
+        <Route path="/offline/game" element={<OfflineGame />} />
         <Route path="/lobby/create" element={<ProtectedRoute><CreateRoom /></ProtectedRoute>} />
         <Route path="/lobby/join" element={<ProtectedRoute><JoinRoom /></ProtectedRoute>} />
         <Route path="/lobby/room/:roomCode" element={<ProtectedRoute><RoomWaiting /></ProtectedRoute>} />

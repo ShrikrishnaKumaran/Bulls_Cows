@@ -40,6 +40,19 @@ function Home() {
       {/* Main Menu */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '40px' }}>
         <button
+          onClick={() => navigate('/offline/setup')}
+          style={{
+            padding: '15px',
+            fontSize: '18px',
+            cursor: 'pointer',
+            border: '1px solid #ccc',
+            borderRadius: '5px'
+          }}
+        >
+          📱 PASS & PLAY (Offline)
+        </button>
+
+        <button
           onClick={() => setShowVsFriendModal(true)}
           style={{
             padding: '15px',
