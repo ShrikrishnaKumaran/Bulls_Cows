@@ -37,7 +37,6 @@ function VsFriendModal({ onClose }) {
         alert('Failed to create room: ' + data.message);
       }
     } catch (error) {
-      console.error('Error creating room:', error);
       alert('Error creating room. Please try again.');
     }
   };
@@ -69,13 +68,10 @@ function VsFriendModal({ onClose }) {
       const data = await response.json();
       if (data.success) {
         alert('Joined room successfully!');
-        // TODO: Navigate to game lobby
-        console.log('Match data:', data.matchData);
       } else {
         alert('Failed to join room: ' + data.message);
       }
     } catch (error) {
-      console.error('Error joining room:', error);
       alert('Error joining room. Please try again.');
     }
   };

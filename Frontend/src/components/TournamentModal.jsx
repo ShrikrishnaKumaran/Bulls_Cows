@@ -18,13 +18,10 @@ function TournamentModal({ onClose }) {
       const data = await response.json();
       if (data.success) {
         alert(`Tournament Created!\nCode: ${data.tournamentCode}\nShare this code with participants!`);
-        // TODO: Navigate to tournament lobby
-        console.log('Tournament data:', data);
       } else {
         alert('Failed to create tournament: ' + data.message);
       }
     } catch (error) {
-      console.error('Error creating tournament:', error);
       alert('Error creating tournament. Please try again.');
     }
   };
@@ -49,13 +46,10 @@ function TournamentModal({ onClose }) {
       const data = await response.json();
       if (data.success) {
         alert('Joined tournament successfully!');
-        // TODO: Navigate to tournament lobby
-        console.log('Tournament data:', data.tournamentData);
       } else {
         alert('Failed to join tournament: ' + data.message);
       }
     } catch (error) {
-      console.error('Error joining tournament:', error);
       alert('Error joining tournament. Please try again.');
     }
   };

@@ -39,14 +39,14 @@ const initializeSocket = (server) => {
 
   // Connection event
   io.on('connection', (socket) => {
-    console.log(`User connected: ${socket.user.username} (${socket.id})`);
+    // User connected
 
     // Register lobby handlers
     lobbyHandler(io, socket);
 
     // Disconnect event
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${socket.user.username} (${socket.id})`);
+      // User disconnected
     });
   });
 

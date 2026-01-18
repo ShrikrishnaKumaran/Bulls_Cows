@@ -49,7 +49,7 @@ function Home() {
             borderRadius: '5px'
           }}
         >
-          📱 PASS & PLAY (Offline)
+          📱 Pass & Play
         </button>
 
         <button

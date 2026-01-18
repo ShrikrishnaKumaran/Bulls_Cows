@@ -33,7 +33,7 @@ const useSocket = () => {
         socketInstance.off('disconnect');
       };
     } catch (error) {
-      console.error('Socket hook error:', error);
+      // Socket initialization error
     }
   }, [isAuthenticated, token]);
 

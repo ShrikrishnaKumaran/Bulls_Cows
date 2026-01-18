@@ -51,7 +51,6 @@ exports.createMatch = async (req, res) => {
       roomId: room._id
     });
   } catch (error) {
-    console.error('Create match error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create match',
@@ -109,7 +108,6 @@ exports.joinMatch = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Join match error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to join match',
@@ -157,7 +155,6 @@ exports.inviteToMatch = async (req, res) => {
       roomCode: room.roomCode
     });
   } catch (error) {
-    console.error('Invite to match error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to send invite',
@@ -187,7 +184,6 @@ exports.getMatch = async (req, res) => {
       matchData: room
     });
   } catch (error) {
-    console.error('Get match error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get match',

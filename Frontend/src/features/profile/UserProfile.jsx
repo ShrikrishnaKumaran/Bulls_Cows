@@ -13,7 +13,7 @@ const UserProfile = () => {
         const response = await api.get('/auth/profile');
         setStats(response.data.stats);
       } catch (error) {
-        console.error('Failed to fetch profile:', error);
+        // Error fetching profile
       } finally {
         setLoading(false);
       }

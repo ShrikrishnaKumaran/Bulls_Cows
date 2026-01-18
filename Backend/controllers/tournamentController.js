@@ -42,7 +42,6 @@ exports.createTournament = async (req, res) => {
       name: tournament.name
     });
   } catch (error) {
-    console.error('Create tournament error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create tournament',
@@ -105,7 +104,6 @@ exports.joinTournament = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Join tournament error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to join tournament',
@@ -135,7 +133,6 @@ exports.getTournament = async (req, res) => {
       tournamentData: tournament
     });
   } catch (error) {
-    console.error('Get tournament error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get tournament',
