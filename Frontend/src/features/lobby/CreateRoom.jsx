@@ -4,7 +4,6 @@ import useSocket from '../../hooks/useSocket';
 
 const CreateRoom = () => {
   const [settings, setSettings] = useState({
-    mode: 'online',
     format: 3,
     digits: 4,
     difficulty: 'easy',
@@ -39,18 +38,7 @@ const CreateRoom = () => {
       <h2>Create Room</h2>
       {error && <div className="error">{error}</div>}
       <div className="settings">
-        <label>
-          Mode:
-          <select
-            value={settings.mode}
-            onChange={(e) =>
-              setSettings({ ...settings, mode: e.target.value })
-            }
-          >
-            <option value="online">Online</option>
-            <option value="tournament">Tournament</option>
-          </select>
-        </label>
+
         <label>
           Format (Best of):
           <select

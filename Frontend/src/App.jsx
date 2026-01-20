@@ -1,20 +1,20 @@
 ﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Home from './components/Home'
-import LoginForm from './features/auth/LoginForm'
-import RegisterForm from './features/auth/RegisterForm'
+import AuthPage from './features/auth/AuthPage'
 import CreateRoom from './features/lobby/CreateRoom'
 import JoinRoom from './features/lobby/JoinRoom'
 import RoomWaiting from './features/lobby/RoomWaiting'
 import UserProfile from './features/profile/UserProfile'
 import PassAndPlaySetup from './components/PassAndPlaySetup'
 import OfflineGame from './components/OfflineGame'
+import ToastContainer from './components/ui/ToastContainer'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token')
   
   if (!token) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/auth" replace />
   }
   
   return children
@@ -23,10 +23,14 @@ const ProtectedRoute = ({ children }) => {
 function App() {
   return (
     <BrowserRouter>
+      {/* Global Toast Notifications */}
+      <ToastContainer />
+      
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/register" element={<RegisterForm />} />
+        <Route path="/" element={<Navigate to="/auth" replace />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/login" element={<Navigate to="/auth" replace />} />
+        <Route path="/register" element={<Navigate to="/auth" replace />} />
         <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
         <Route path="/offline/setup" element={<PassAndPlaySetup />} />

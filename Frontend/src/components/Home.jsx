@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import VsFriendModal from './VsFriendModal';
-import TournamentModal from './TournamentModal';
 
 function Home() {
   const navigate = useNavigate();
   const [showVsFriendModal, setShowVsFriendModal] = useState(false);
-  const [showTournamentModal, setShowTournamentModal] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -64,19 +62,6 @@ function Home() {
         >
           ⚔️ VS FRIEND
         </button>
-
-        <button
-          onClick={() => setShowTournamentModal(true)}
-          style={{
-            padding: '15px',
-            fontSize: '18px',
-            cursor: 'pointer',
-            border: '1px solid #ccc',
-            borderRadius: '5px'
-          }}
-        >
-          🏆 TOURNAMENT
-        </button>
       </div>
 
       {/* Footer */}
@@ -111,10 +96,6 @@ function Home() {
       {/* Modals */}
       {showVsFriendModal && (
         <VsFriendModal onClose={() => setShowVsFriendModal(false)} />
-      )}
-
-      {showTournamentModal && (
-        <TournamentModal onClose={() => setShowTournamentModal(false)} />
       )}
     </div>
   );

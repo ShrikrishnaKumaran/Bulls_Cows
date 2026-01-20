@@ -21,17 +21,12 @@ const roomSchema = new mongoose.Schema({
     type: Number,
     default: 2,
     min: 2,
-    max: 4  // 2 for online mode, 4 for tournament (round robin)
+    max: 2
   },
   status: {
     type: String,
     enum: ['waiting', 'active', 'completed', 'cancelled'],
     default: 'waiting'
-  },
-  mode: {
-    type: String,
-    enum: ['online', 'tournament'],
-    default: 'online'
   },
   format: {
     type: Number,

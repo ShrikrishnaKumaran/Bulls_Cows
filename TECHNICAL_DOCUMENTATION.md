@@ -1,7 +1,7 @@
 # Bulls, Cows & Shit - Technical Documentation
 
-**Version:** 1.0.0  
-**Last Updated:** January 16, 2026  
+**Version:** 1.1.0  
+**Last Updated:** January 20, 2026  
 **Branch:** feature/OflineMode
 
 ---
@@ -18,9 +18,10 @@
 9. [Socket Events](#socket-events)
 10. [State Management](#state-management)
 11. [Authentication Flow](#authentication-flow)
-12. [Game Modes](#game-modes)
-13. [Development Guide](#development-guide)
-14. [Environment Variables](#environment-variables)
+12. [UI Design System](#ui-design-system)
+13. [Game Modes](#game-modes)
+14. [Development Guide](#development-guide)
+15. [Environment Variables](#environment-variables)
 
 ---
 
@@ -43,7 +44,9 @@ Bulls, Cows & Shit is a multiplayer number guessing game where players try to gu
 - ✅ Offline mode (Pass & Play)
 - ✅ Online multiplayer lobby system
 - ✅ Real-time communication via Socket.io
-- 🚧 Tournament mode (in progress)
+- ✅ **Cyber Minimalist UI Design** (Tailwind CSS)
+- ✅ **Toast Notification System** (Zustand-based)
+- ✅ **Unified Auth Page** (Login/Register tabs)
 
 ---
 
@@ -116,20 +119,17 @@ Bulls_Cows/
 │   │   └── env.js               # Environment validation
 │   ├── controllers/
 │   │   ├── authController.js    # Auth endpoints logic
-│   │   ├── matchController.js   # Match game logic
-│   │   └── tournamentController.js
+│   │   └── matchController.js   # Match game logic
 │   ├── middleware/
 │   │   ├── authMiddleware.js    # JWT verification
 │   │   └── validationMiddleware.js
 │   ├── models/
 │   │   ├── User.js              # User schema
 │   │   ├── RefreshToken.js      # Refresh token schema
-│   │   ├── Room.js              # Game room schema
-│   │   └── tournament.js
+│   │   └── Room.js              # Game room schema
 │   ├── routes/
 │   │   ├── auth.js              # Auth routes
-│   │   ├── match.js             # Match routes
-│   │   └── tournament.js
+│   │   └── match.js             # Match routes
 │   ├── services/
 │   │   ├── authService.js       # Auth business logic
 │   │   ├── matchService.js
@@ -149,13 +149,19 @@ Bulls_Cows/
 │   │   ├── components/
 │   │   │   ├── Home.jsx                # Main menu
 │   │   │   ├── PassAndPlaySetup.jsx    # Offline setup
-│   │   │   ├── OfflineGame.jsx         # Offline gameplay (TO BE CREATED)
+│   │   │   ├── OfflineGame.jsx         # Offline gameplay
 │   │   │   ├── VsFriendModal.jsx       # VS Friend modal
-│   │   │   └── TournamentModal.jsx     # Tournament modal
+│   │   │   └── ui/
+│   │   │       ├── Button.jsx          # Reusable button
+│   │   │       ├── Input.jsx           # Reusable input
+│   │   │       ├── Modal.jsx           # Modal dialog
+│   │   │       ├── Loader.jsx          # Loading spinner
+│   │   │       ├── ToastContainer.jsx  # Toast notifications
+│   │   │       └── index.js            # Component exports
 │   │   ├── features/
 │   │   │   ├── auth/
-│   │   │   │   ├── LoginForm.jsx
-│   │   │   │   └── RegisterForm.jsx
+│   │   │   │   ├── AuthPage.jsx        # Unified login/register page
+│   │   │   │   └── AuthComponents.jsx  # Reusable auth UI components
 │   │   │   ├── lobby/
 │   │   │   │   ├── CreateRoom.jsx
 │   │   │   │   ├── JoinRoom.jsx
@@ -170,7 +176,8 @@ Bulls_Cows/
 │   │   ├── store/
 │   │   │   ├── useAuthStore.js         # Auth state
 │   │   │   ├── useGameStore.js         # Online game state
-│   │   │   └── useOfflineGameStore.js  # Offline game state
+│   │   │   ├── useOfflineGameStore.js  # Offline game state
+│   │   │   └── useToastStore.js        # Toast notification state
 │   │   ├── utils/
 │   │   │   ├── gameRules.js            # Game logic (shared)
 │   │   │   ├── gameLogic.js
@@ -257,9 +264,8 @@ Indexes:
   roomCode: String (unique, 4 chars, uppercase),
   host: ObjectId (ref: 'User'),
   players: [ObjectId] (ref: 'User'),
-  playerCount: Number (2-4, default: 2),
+  playerCount: Number (default: 2),
   status: String ('waiting' | 'active' | 'completed' | 'cancelled'),
-  mode: String ('online' | 'tournament'),
   format: Number (1 | 3 | 5 - best of),
   digits: Number (3 | 4),
   difficulty: String ('easy' | 'hard'),
@@ -403,9 +409,10 @@ Socket events for room management:
 ### App Structure (App.jsx)
 ```javascript
 Routes:
-- /                  → Redirect to /login
-- /login             → LoginForm
-- /register          → RegisterForm
+- /                  → Redirect to /auth
+- /auth              → AuthPage (unified login/register)
+- /login             → Redirect to /auth
+- /register          → Redirect to /auth
 - /home              → Home (Protected)
 - /profile           → UserProfile (Protected)
 - /offline/setup     → PassAndPlaySetup
@@ -414,9 +421,12 @@ Routes:
 - /lobby/join        → JoinRoom (Protected)
 - /lobby/room/:code  → RoomWaiting (Protected)
 
+Global Components:
+- ToastContainer     → Toast notifications (top-right, z-100)
+
 ProtectedRoute Component:
 - Checks localStorage for token
-- Redirects to /login if not found
+- Redirects to /auth if not found
 ```
 
 ### State Management (Zustand Stores)
@@ -471,6 +481,28 @@ Actions:
 No Persistence: State is in-memory only
 ```
 
+#### Toast Store (`store/useToastStore.js`)
+```javascript
+State:
+- toasts: Array<{ id, message, type }>
+
+Actions:
+- addToast(message, type) → Add toast notification
+  - type: 'success' | 'error' | 'warning' | 'info'
+  - Uses Date.now() for unique ID
+  - Auto-removes after 3000ms (3 seconds)
+- removeToast(id) → Remove specific toast by ID
+- clearAllToasts() → Clear all toasts
+
+No Persistence: State is in-memory only
+
+Usage:
+import useToastStore from '../store/useToastStore'
+const { addToast } = useToastStore()
+addToast('Welcome to the Arena!', 'success')
+addToast('Login failed', 'error')
+```
+
 ### Services
 
 #### API Service (`services/api.js`)
@@ -517,15 +549,14 @@ socket.emit('create-room', settings, callback)
 
 #### Home Component (`components/Home.jsx`)
 Main menu after login:
-- 3 game mode buttons:
+- 2 game mode buttons:
   - 📱 Pass & Play (Offline) → `/offline/setup`
   - ⚔️ VS Friend → Opens VsFriendModal
-  - 🏆 Tournament → Opens TournamentModal
 - Footer buttons:
   - ❓ How to Play → Alert (not implemented)
   - 👤 My Profile → `/profile`
 - Logout button (top-right)
-- Modals: VsFriendModal, TournamentModal
+- Modals: VsFriendModal
 
 #### PassAndPlaySetup Component (`components/PassAndPlaySetup.jsx`)
 Two-step secret setup for offline mode:
@@ -592,20 +623,85 @@ UI Sections:
 4. Game Over Modal: Conditional render
 ```
 
-#### LoginForm Component (`features/auth/LoginForm.jsx`)
-- Email and password inputs
-- Submit button (shows loading state)
-- Error display
-- Link to register page
-- Calls `useAuthStore.login()`
-- Navigates to `/home` on success
+#### AuthPage Component (`features/auth/AuthPage.jsx`)
+Unified login/register page with "Cyber Minimalist" design.
 
-#### RegisterForm Component (`features/auth/RegisterForm.jsx`)
-Similar to LoginForm with username field
+**State:**
+- `activeTab` - 'login' | 'register'
+- `loading` - Boolean (API request in progress)
+- `formData` - { username, email, password, confirmPassword }
+- `fieldErrors` - Per-field error messages
+
+**Features:**
+- Tab switcher (pill-shaped toggle)
+- Dynamic form fields based on active tab
+- Field-level validation with red border on error
+- Toast notifications for success/error
+- Direct axios API calls to backend
+- Saves token to localStorage on success
+- Glitch text effect on title
+- Scanlines overlay effect
+- Tech-border "Secure Connection" footer
+
+**Flow:**
+1. User selects Login or Register tab
+2. Fills in form fields
+3. Form validates on submit
+4. API request to `/api/auth/login` or `/api/auth/register`
+5. On success: Toast, save token, navigate to `/home`
+6. On error: Toast, highlight error field
+
+#### AuthComponents (`features/auth/AuthComponents.jsx`)
+Reusable UI components for authentication:
+
+**AuthInput:**
+- Props: label, type, placeholder, icon, value, onChange, error
+- Dark themed with icon support
+- Password toggle (show/hide)
+- Error state: red border, red icon, error message below
+- Focus ring animation
+
+**PrimaryButton:**
+- Props: children, onClick, disabled, loading
+- Neon yellow with shadow effect
+- Loading spinner when loading=true
+- Hover/active scale animations
+
+**SecondaryButton:**
+- Outlined variant of PrimaryButton
+- Border turns solid on hover
+
+**TabSwitcher:**
+- Props: activeTab, onTabChange
+- Pill-shaped container
+- Sliding yellow background on active tab
+
+**Divider:**
+- "OR" text divider line
+
+**TechFooter:**
+- "Secure Connection" text with tech corner borders
+
+#### ToastContainer Component (`components/ui/ToastContainer.jsx`)
+Global toast notification system:
+
+**Position:** Fixed, top-right (top-4 right-4), z-100
+
+**Toast Types:**
+- success: Green border, checkmark icon
+- error: Red border, warning icon
+- warning: Yellow border, lightning icon
+- info: Blue border, info icon
+
+**Features:**
+- Slide-in animation from right
+- Glassmorphism effect (backdrop-blur)
+- Close button on each toast
+- Auto-dismiss after 3 seconds
+- Multiple toasts stack vertically
 
 #### CreateRoom Component (`features/lobby/CreateRoom.jsx`)
 - Settings form:
-  - Mode: online | tournament
   - Format: 1 | 3 | 5 (best of)
   - Digits: 3 | 4
   - Difficulty: easy | hard
@@ -797,7 +893,6 @@ Result: { bulls: 1, cows: 2, shit: 1, isWin: false, error: null }
 **Payload:**
 ```javascript
 {
-  mode: 'online' | 'tournament',
   format: 1 | 3 | 5,
   digits: 3 | 4,
   difficulty: 'easy' | 'hard'
@@ -917,12 +1012,12 @@ const { value, action } = useStore();
 
 ### Store Comparison
 
-| Feature | useAuthStore | useOfflineGameStore | useGameStore |
-|---------|--------------|---------------------|--------------|
-| **Purpose** | User auth | Offline game | Online game |
-| **Persistence** | Yes (localStorage) | No (in-memory) | No (socket sync) |
-| **Network** | HTTP API | None | Socket.io |
-| **Lifecycle** | Global (session) | Per-game | Per-match |
+| Feature | useAuthStore | useOfflineGameStore | useGameStore | useToastStore |
+|---------|--------------|---------------------|--------------|---------------|
+| **Purpose** | User auth | Offline game | Online game | Notifications |
+| **Persistence** | Yes (localStorage) | No (in-memory) | No (socket sync) | No (in-memory) |
+| **Network** | HTTP API | None | Socket.io | None |
+| **Lifecycle** | Global (session) | Per-game | Per-match | Global (session) |
 
 ---
 
@@ -981,17 +1076,101 @@ const { value, action } = useStore();
 5. Backend: Clear refreshToken cookie
 6. Frontend: Remove token from localStorage
 7. Frontend: Destroy Socket.io connection
-8. Frontend: Navigate to /login
+8. Frontend: Navigate to /auth
 ```
 
 ### Protected Route Flow
 ```
 1. User navigates to protected route
 2. ProtectedRoute checks localStorage for token
-3. If no token → Redirect to /login
+3. If no token → Redirect to /auth
 4. If token exists → Render children
 5. API request with expired token → 401
-6. Axios interceptor → Clear token, redirect to /login
+6. Axios interceptor → Clear token, redirect to /auth
+```
+
+---
+
+## UI Design System
+
+### Design Theme: "Cyber Minimalist"
+A dark, futuristic design with neon accents and tech-inspired elements.
+
+### Tailwind CSS Configuration (`tailwind.config.js`)
+```javascript
+theme: {
+  extend: {
+    colors: {
+      "primary": "#facc14",           // Neon Yellow
+      "primary-content": "#000000",   // Black (for text on primary)
+      "secondary": "#3b82f6",         // Electric Blue
+      "background-light": "#f8f8f5",  // Light mode (not used)
+      "background-dark": "#111827",   // Deep charcoal
+      "surface-dark": "#1f2937",      // Lighter charcoal (cards)
+      "input-bg": "#374151",          // Input field background
+    },
+    fontFamily: {
+      'space': ['"Space Grotesk"', 'sans-serif'],
+    },
+    boxShadow: {
+      'neon': '0 0 10px rgba(250, 204, 20, 0.5)',
+      'neon-strong': '0 0 20px rgba(250, 204, 20, 0.7)',
+    },
+  },
+}
+```
+
+### Custom CSS Classes (`index.css`)
+
+**Space Grotesk Font:**
+```css
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+```
+
+**Scanlines Effect:**
+```css
+.scanlines {
+  position: fixed;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 50;
+}
+```
+
+**Glitch Text Effect:**
+```css
+.glitch-text {
+  text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+  animation: glitch 2s infinite;
+}
+```
+
+**Tech Border Corners:**
+```css
+.tech-border::before, .tech-border::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1px solid #facc14;
+}
+```
+
+**Toast Slide-In Animation:**
+```css
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out forwards;
+}
 ```
 
 ---
@@ -1059,19 +1238,6 @@ const { value, action } = useStore();
 ```
 
 **Backend Required:** Room management, Socket.io
-
-### 3. Tournament Mode
-
-**Status:** Not implemented
-
-**Planned Flow:**
-```
-1. Home → "Tournament" button → TournamentModal
-2. Create tournament (4 players)
-3. Round-robin matches
-4. Points table
-5. Winner determined by points
-```
 
 ---
 
@@ -1160,7 +1326,6 @@ develop (integration)
   ↑
 feature/OflineMode (offline game mode)
 feature/OnlineGame (online multiplayer)
-feature/Tournament (tournament mode)
 ```
 
 **Common Commands:**
@@ -1285,32 +1450,26 @@ console.log(useOfflineGameStore.getState())
    - Best-of-N format tracking
    - Match results
 
-2. **Tournament Mode**
-   - 4-player round-robin
-   - Points table
-   - Match scheduling
-   - Winner determination
-
-3. **User Profile Enhancements**
+2. **User Profile Enhancements**
    - Stats display
    - Friend system
    - Match history
    - Leaderboard
 
-4. **UI/UX Improvements**
+3. **UI/UX Improvements**
    - Responsive design
    - Loading states
    - Animations
    - Tutorial/How to Play
    - Error boundaries
 
-5. **Testing**
+4. **Testing**
    - Unit tests (backend services)
    - Integration tests (API endpoints)
    - Component tests (React components)
    - E2E tests (Playwright/Cypress)
 
-6. **Deployment**
+5. **Deployment**
    - Production environment setup
    - CI/CD pipeline
    - MongoDB Atlas
@@ -1377,6 +1536,8 @@ console.log(useOfflineGameStore.getState())
 **Mongoose:** ODM (Object Data Modeling) library for MongoDB  
 **bcryptjs:** Password hashing library  
 **JWT:** JSON Web Token for authentication  
+**Tailwind CSS:** Utility-first CSS framework  
+**PostCSS:** CSS processing tool  
 
 ---
 
@@ -1388,6 +1549,6 @@ console.log(useOfflineGameStore.getState())
 
 ---
 
-**Last Updated:** January 16, 2026  
-**Version:** 1.0.0  
+**Last Updated:** January 20, 2026  
+**Version:** 1.1.0  
 **Branch:** feature/OflineMode
