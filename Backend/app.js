@@ -13,12 +13,14 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); // Parse cookies
-app.use(morgan('dev'));
+// Only log requests if we are working locally
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/matches', require('./routes/match'));
-// app.use('/api/users', require('./routes/user'));
+app.use('/api/auth', require('./routes/auth'));//look on auth.js route file when route starts with /api/auth
+app.use('/api/matches', require('./routes/match'));//look on match.js route file when route starts with /api/matches
 
 // Health check
 app.get('/health', (req, res) => {
