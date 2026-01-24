@@ -7,6 +7,7 @@ import RoomWaiting from './features/lobby/RoomWaiting'
 import UserProfile from './features/profile/UserProfile'
 import PassAndPlaySetup from './components/PassAndPlaySetup'
 import OfflineGame from './components/OfflineGame'
+import OnlineGame from './features/game/OnlineGame'
 import ToastContainer from './components/ui/ToastContainer'
 
 // Protected Route Component
@@ -38,6 +39,7 @@ function App() {
         <Route path="/lobby/create" element={<ProtectedRoute><CreateRoom /></ProtectedRoute>} />
         <Route path="/lobby/join" element={<ProtectedRoute><JoinRoom /></ProtectedRoute>} />
         <Route path="/lobby/room/:roomCode" element={<ProtectedRoute><RoomWaiting /></ProtectedRoute>} />
+        <Route path="/game/online/:roomCode" element={<ProtectedRoute><OnlineGame /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   )

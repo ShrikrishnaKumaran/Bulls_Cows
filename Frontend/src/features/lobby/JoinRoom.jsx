@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSocket from '../../hooks/useSocket';
 
+/**
+ * JoinRoom - Join an existing game room by code
+ * Room codes are 4 alphanumeric characters (e.g., "A1B2")
+ */
 const JoinRoom = () => {
   const [roomCode, setRoomCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -11,8 +15,8 @@ const JoinRoom = () => {
   const navigate = useNavigate();
 
   const handleJoinRoom = () => {
-    if (!roomCode || roomCode.length !== 6) {
-      setError('Please enter a valid 6-character room code');
+    if (!roomCode || roomCode.length !== 4) {
+      setError('Please enter a valid 4-character room code');
       return;
     }
 
@@ -27,7 +31,7 @@ const JoinRoom = () => {
     socket.emit('join-room', roomCode.toUpperCase(), (response) => {
       setLoading(false);
       if (response.success) {
-        navigate(`/lobby/${roomCode.toUpperCase()}`);
+        navigate(`/lobby/room/${roomCode.toUpperCase()}`);
       } else {
         setError(response.message);
       }
@@ -40,10 +44,10 @@ const JoinRoom = () => {
       {error && <div className="error">{error}</div>}
       <input
         type="text"
-        placeholder="Enter Room Code"
+        placeholder="Enter Room Code (4 chars)"
         value={roomCode}
         onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-        maxLength={6}
+        maxLength={4}
       />
       <button onClick={handleJoinRoom} disabled={loading || !roomCode}>
         {loading ? 'Joining...' : 'Join Room'}

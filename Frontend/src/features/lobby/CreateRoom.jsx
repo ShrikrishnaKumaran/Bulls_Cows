@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSocket from '../../hooks/useSocket';
 
+/**
+ * CreateRoom - Create a new game room with customizable settings
+ * Settings include: format (best of 1/3/5), digits (3/4), difficulty
+ */
 const CreateRoom = () => {
   const [settings, setSettings] = useState({
-    format: 3,
-    digits: 4,
+    format: 3,   // Best of 3 games
+    digits: 4,   // 4-digit numbers
     difficulty: 'easy',
   });
   const [loading, setLoading] = useState(false);
@@ -26,7 +30,7 @@ const CreateRoom = () => {
     socket.emit('create-room', settings, (response) => {
       setLoading(false);
       if (response.success) {
-        navigate(`/lobby/${response.room.roomCode}`);
+        navigate(`/lobby/room/${response.room.roomCode}`);
       } else {
         setError(response.message);
       }

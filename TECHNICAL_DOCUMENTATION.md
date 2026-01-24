@@ -1,1554 +1,559 @@
 # Bulls, Cows & Shit - Technical Documentation
 
-**Version:** 1.1.0  
-**Last Updated:** January 20, 2026  
-**Branch:** feature/OflineMode
+**Version:** 2.0.0  
+**Last Updated:** January 23, 2026  
+**Status:** Production Ready
 
 ---
 
 ## Table of Contents
-1. [Project Overview](#project-overview)
-2. [Architecture](#architecture)
-3. [Technology Stack](#technology-stack)
-4. [Directory Structure](#directory-structure)
-5. [Backend Documentation](#backend-documentation)
-6. [Frontend Documentation](#frontend-documentation)
-7. [Game Logic](#game-logic)
-8. [API Endpoints](#api-endpoints)
-9. [Socket Events](#socket-events)
-10. [State Management](#state-management)
-11. [Authentication Flow](#authentication-flow)
-12. [UI Design System](#ui-design-system)
-13. [Game Modes](#game-modes)
-14. [Development Guide](#development-guide)
-15. [Environment Variables](#environment-variables)
+
+1. [Project Overview](#1-project-overview)
+2. [Architecture](#2-architecture)
+3. [Technology Stack](#3-technology-stack)
+4. [Directory Structure](#4-directory-structure)
+5. [Backend Documentation](#5-backend-documentation)
+6. [Frontend Documentation](#6-frontend-documentation)
+7. [Game Logic](#7-game-logic)
+8. [API Endpoints](#8-api-endpoints)
+9. [Socket Events](#9-socket-events)
+10. [State Management](#10-state-management)
+11. [Authentication Flow](#11-authentication-flow)
+12. [Game Flow](#12-game-flow)
+13. [Environment Variables](#13-environment-variables)
+14. [Development Guide](#14-development-guide)
 
 ---
 
-## Project Overview
+## 1. Project Overview
 
-Bulls, Cows & Shit is a multiplayer number guessing game where players try to guess each other's secret numbers. The game features both offline (Pass & Play) and online multiplayer modes.
+Bulls, Cows & Shit is a multiplayer number guessing game where players try to guess each other's secret numbers. The game features both offline (Pass & Play) and online 1v1 multiplayer modes.
 
 ### Game Rules
-- Players choose a secret number with 3 or 4 unique digits
-- Players take turns guessing each other's secrets
-- Feedback is given for each guess:
-  - **Bulls**: Correct digit in correct position
-  - **Cows**: Correct digit in wrong position
-  - **Shit**: Digit not in the secret number
-- First player to guess the secret correctly wins
 
-### Current Features
-- ✅ User authentication (JWT with refresh tokens)
-- ✅ User profiles with stats
-- ✅ Offline mode (Pass & Play)
-- ✅ Online multiplayer lobby system
-- ✅ Real-time communication via Socket.io
-- ✅ **Cyber Minimalist UI Design** (Tailwind CSS)
-- ✅ **Toast Notification System** (Zustand-based)
-- ✅ **Unified Auth Page** (Login/Register tabs)
+1. Each player chooses a secret number with 3 or 4 **unique digits**
+2. Players take turns guessing each other's secrets
+3. For each guess, feedback is given:
+   - 🟢 **Bulls**: Correct digit in correct position
+   - 🟡 **Cows**: Correct digit in wrong position
+   - ⚫ **Shit**: Digit not in the secret number
+4. First player to guess the secret correctly wins the round
+5. Match can be Best of 1, 3, or 5 rounds
 
----
+### Features
 
-## Architecture
-
-The application follows a **client-server architecture**:
-
-```
-┌─────────────────────────────────────┐
-│         Frontend (React)            │
-│  - Vite Build Tool                  │
-│  - Zustand State Management         │
-│  - React Router for Navigation      │
-│  - Socket.io Client                 │
-└──────────────┬──────────────────────┘
-               │
-               │ HTTP/WebSocket
-               │
-┌──────────────┴──────────────────────┐
-│         Backend (Node.js)           │
-│  - Express REST API                 │
-│  - Socket.io Server                 │
-│  - MongoDB Database                 │
-│  - JWT Authentication               │
-└─────────────────────────────────────┘
-```
-
-### Design Patterns
-- **MVC Pattern**: Models, Controllers, Services separation
-- **Repository Pattern**: Service layer abstracts data access
-- **Middleware Pattern**: Auth, validation, error handling
-- **State Management**: Zustand stores for React state
+| Feature | Status | Description |
+|---------|--------|-------------|
+| User Authentication | ✅ | JWT with refresh tokens |
+| User Profiles | ✅ | Stats tracking |
+| Offline Mode | ✅ | Pass & Play (2 players, 1 device) |
+| Online 1v1 | ✅ | Real-time multiplayer via Socket.io |
+| Room System | ✅ | 4-character room codes |
+| Friend Invites | ✅ | Real-time invite notifications |
+| Cyber Minimalist UI | ✅ | Tailwind CSS design system |
 
 ---
 
-## Technology Stack
+## 2. Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    FRONTEND (React + Vite)                  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │   Zustand   │  │   Socket.io │  │     React Router    │  │
+│  │   Stores    │  │   Client    │  │     Navigation      │  │
+│  └─────────────┘  └──────┬──────┘  └─────────────────────┘  │
+└───────────────────────────┼─────────────────────────────────┘
+                            │
+              HTTP REST API │ WebSocket
+                            │
+┌───────────────────────────┼─────────────────────────────────┐
+│                    BACKEND (Node.js + Express)              │
+│  ┌─────────────┐  ┌──────┴──────┐  ┌─────────────────────┐  │
+│  │ Controllers │  │  Socket.io  │  │    Middleware       │  │
+│  │  (Routes)   │  │   Server    │  │  (Auth, Validate)   │  │
+│  └──────┬──────┘  └──────┬──────┘  └─────────────────────┘  │
+│         │                │                                   │
+│  ┌──────┴──────┐  ┌──────┴──────┐                           │
+│  │  Services   │  │   Handlers  │   In-Memory: activeGames  │
+│  │ (Business)  │  │(Lobby,Game) │                           │
+│  └──────┬──────┘  └─────────────┘                           │
+│         │                                                    │
+│  ┌──────┴──────┐                                            │
+│  │   Models    │   MongoDB Database                         │
+│  │ (Mongoose)  │                                            │
+│  └─────────────┘                                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Design Decisions
+
+1. **In-Memory Game State**: Active games stored in `activeGames` object for low-latency real-time play
+2. **MongoDB for Persistence**: Users, refresh tokens, room metadata stored in MongoDB
+3. **Socket.io Rooms**: Players join socket rooms by `roomCode` for targeted broadcasts
+4. **Zustand for State**: Lightweight state management with automatic React binding
+
+---
+
+## 3. Technology Stack
 
 ### Backend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Node.js | Latest | Runtime environment |
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| Node.js | 20.x | Runtime |
 | Express | 4.18.2 | Web framework |
-| MongoDB | Latest | Database |
-| Mongoose | 7.5.0 | ODM for MongoDB |
+| MongoDB | 7.x | Database |
+| Mongoose | 7.5.0 | ODM |
 | Socket.io | 4.7.2 | Real-time communication |
-| JWT | 9.0.2 | Authentication tokens |
+| jsonwebtoken | 9.0.2 | JWT tokens |
 | bcryptjs | 2.4.3 | Password hashing |
-| cookie-parser | 1.4.6 | Cookie handling |
-| cors | 2.8.5 | CORS middleware |
 
 ### Frontend
-| Technology | Version | Purpose |
-|------------|---------|---------|
+
+| Package | Version | Purpose |
+|---------|---------|---------|
 | React | 18.2.0 | UI framework |
-| Vite | 4.4.9 | Build tool & dev server |
-| React Router | 6.16.0 | Client-side routing |
+| Vite | 4.4.9 | Build tool |
+| React Router | 6.16.0 | Routing |
 | Zustand | 4.4.1 | State management |
-| Axios | 1.5.0 | HTTP client |
 | Socket.io Client | 4.7.2 | WebSocket client |
+| Tailwind CSS | 3.x | Styling |
 
 ---
 
-## Directory Structure
+## 4. Directory Structure
 
 ```
 Bulls_Cows/
 ├── Backend/
 │   ├── config/
-│   │   ├── database.js          # MongoDB connection
-│   │   └── env.js               # Environment validation
+│   │   ├── database.js         # MongoDB connection
+│   │   └── env.js              # Environment config
 │   ├── controllers/
-│   │   ├── authController.js    # Auth endpoints logic
-│   │   └── matchController.js   # Match game logic
+│   │   ├── authController.js   # Auth HTTP handlers
+│   │   └── matchController.js  # Room HTTP handlers
 │   ├── middleware/
-│   │   ├── authMiddleware.js    # JWT verification
+│   │   ├── authMiddleware.js   # JWT verification
 │   │   └── validationMiddleware.js
 │   ├── models/
-│   │   ├── User.js              # User schema
-│   │   ├── RefreshToken.js      # Refresh token schema
-│   │   └── Room.js              # Game room schema
+│   │   ├── User.js             # User schema
+│   │   ├── RefreshToken.js     # Token storage
+│   │   └── Room.js             # Game room schema
 │   ├── routes/
-│   │   ├── auth.js              # Auth routes
-│   │   └── match.js             # Match routes
+│   │   ├── auth.js             # /api/auth routes
+│   │   └── match.js            # /api/matches routes
 │   ├── services/
-│   │   ├── authService.js       # Auth business logic
-│   │   ├── matchService.js
-│   │   └── roomService.js       # Room management
+│   │   ├── authService.js      # Auth business logic
+│   │   └── roomService.js      # Room CRUD operations
 │   ├── sockets/
-│   │   ├── socketManager.js     # Socket.io setup
-│   │   └── lobbyHandler.js      # Lobby socket events
+│   │   ├── socketManager.js    # Socket.io initialization
+│   │   ├── lobbyHandler.js     # Room socket events
+│   │   └── gameHandler.js      # Game socket events
 │   ├── utils/
-│   │   ├── gameRules.js         # Bulls/Cows calculation
-│   │   └── tokenGenerator.js    # JWT token generation
-│   ├── app.js                   # Express app setup
-│   ├── server.js                # Server entry point
-│   └── package.json
+│   │   ├── gameRules.js        # Bulls/Cows calculation
+│   │   └── tokenGenerator.js   # JWT generation
+│   ├── app.js                  # Express app
+│   └── server.js               # Entry point
 │
 ├── Frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Home.jsx                # Main menu
-│   │   │   ├── PassAndPlaySetup.jsx    # Offline setup
-│   │   │   ├── OfflineGame.jsx         # Offline gameplay
-│   │   │   ├── VsFriendModal.jsx       # VS Friend modal
-│   │   │   └── ui/
-│   │   │       ├── Button.jsx          # Reusable button
-│   │   │       ├── Input.jsx           # Reusable input
-│   │   │       ├── Modal.jsx           # Modal dialog
-│   │   │       ├── Loader.jsx          # Loading spinner
-│   │   │       ├── ToastContainer.jsx  # Toast notifications
-│   │   │       └── index.js            # Component exports
-│   │   ├── features/
-│   │   │   ├── auth/
-│   │   │   │   ├── AuthPage.jsx        # Unified login/register page
-│   │   │   │   └── AuthComponents.jsx  # Reusable auth UI components
-│   │   │   ├── lobby/
-│   │   │   │   ├── CreateRoom.jsx
-│   │   │   │   ├── JoinRoom.jsx
-│   │   │   │   └── RoomWaiting.jsx
-│   │   │   └── profile/
-│   │   │       └── UserProfile.jsx
-│   │   ├── hooks/
-│   │   │   └── useSocket.js            # Socket.io hook
-│   │   ├── services/
-│   │   │   ├── api.js                  # Axios instance
-│   │   │   └── socket.js               # Socket.io client
-│   │   ├── store/
-│   │   │   ├── useAuthStore.js         # Auth state
-│   │   │   ├── useGameStore.js         # Online game state
-│   │   │   ├── useOfflineGameStore.js  # Offline game state
-│   │   │   └── useToastStore.js        # Toast notification state
-│   │   ├── utils/
-│   │   │   ├── gameRules.js            # Game logic (shared)
-│   │   │   ├── gameLogic.js
-│   │   │   ├── gameHelpers.js
-│   │   │   └── validators.js
-│   │   ├── App.jsx                     # Main app component
-│   │   ├── main.jsx                    # React entry point
-│   │   └── index.css
-│   ├── index.html
-│   ├── vite.config.js
-│   └── package.json
+│   └── src/
+│       ├── components/
+│       │   ├── Home.jsx            # Main menu
+│       │   ├── OfflineGame.jsx     # Offline gameplay
+│       │   ├── PassAndPlaySetup.jsx
+│       │   ├── VsFriendModal.jsx   # Friend invite modal
+│       │   └── ui/                 # Reusable UI components
+│       ├── features/
+│       │   ├── auth/               # Login/Register
+│       │   ├── game/
+│       │   │   └── OnlineGame.jsx  # Online gameplay
+│       │   ├── lobby/
+│       │   │   ├── CreateRoom.jsx
+│       │   │   ├── JoinRoom.jsx
+│       │   │   └── RoomWaiting.jsx
+│       │   └── profile/
+│       ├── hooks/
+│       │   └── useSocket.js        # Socket hook
+│       ├── services/
+│       │   ├── api.js              # Axios instance
+│       │   └── socket.js           # Socket.io client
+│       ├── store/
+│       │   ├── useAuthStore.js     # Auth state
+│       │   ├── useGameStore.js     # Online game state
+│       │   └── useOfflineGameStore.js
+│       ├── utils/
+│       │   └── gameRules.js        # Client-side validation
+│       └── App.jsx                 # Routes
 │
-├── Planning/                   # Design documents
-├── README.md
-└── package.json               # Workspace root
+└── Planning/                       # Design documents
 ```
 
 ---
 
-## Backend Documentation
+## 5. Backend Documentation
 
-### Server Setup (server.js)
-- Loads environment variables from `.env`
-- Connects to MongoDB via `connectDB()`
-- Creates HTTP server with Express app
-- Initializes Socket.io on the HTTP server
-- Listens on port 5000 (default)
+### 5.1 Models
 
-### Express App (app.js)
-```javascript
-Middleware Stack:
-1. CORS (allows credentials from frontend)
-2. JSON body parser
-3. URL-encoded parser
-4. Cookie parser (for refresh tokens)
-5. Morgan (HTTP logging)
-
-Routes:
-- /api/auth      → Authentication
-- /api/matches   → Match games
-- /health        → Health check endpoint
-```
-
-### Models
-
-#### User Model (`models/User.js`)
+#### User (`models/User.js`)
 ```javascript
 {
-  username: String (unique, 3-20 chars, alphanumeric + underscore),
-  email: String (unique, validated),
-  password: String (hashed, select: false),
+  username: String,     // Unique, 3-20 chars
+  email: String,        // Unique, validated
+  password: String,     // Hashed, select: false
   stats: {
-    totalGames: Number (default: 0),
-    wins: Number (default: 0),
-    losses: Number (default: 0),
-    draws: Number (default: 0)
+    totalGames: Number,
+    wins: Number,
+    losses: Number
   },
-  friends: [ObjectId] (ref: 'User'),
-  isOnline: Boolean (default: false)
+  friends: [ObjectId], // User references
+  isOnline: Boolean
 }
 ```
 
-#### RefreshToken Model (`models/RefreshToken.js`)
+#### Room (`models/Room.js`)
 ```javascript
 {
-  user: ObjectId (ref: 'User'),
-  token: String (the JWT refresh token),
-  device: String (device type from user-agent),
+  roomCode: String,     // Unique, 4 uppercase chars
+  host: ObjectId,       // User who created room
+  opponent: ObjectId,   // User who joined (or null)
+  status: String,       // 'waiting' | 'active' | 'completed'
+  format: Number,       // 1, 3, or 5 (best of)
+  digits: Number,       // 3 or 4
+  difficulty: String,   // 'easy' | 'hard'
+  createdAt: Date       // Auto-expires after 1 hour
+}
+```
+
+#### RefreshToken (`models/RefreshToken.js`)
+```javascript
+{
+  user: ObjectId,
+  token: String,
+  device: String,
   ipAddress: String,
-  expiresAt: Date,
-  isRevoked: Boolean (default: false),
-  timestamps: true
+  expiresAt: Date,      // 30 days
+  isRevoked: Boolean
 }
-
-Indexes:
-- expiresAt: Auto-delete expired tokens
-- token: Fast lookup
-- user: Fast user queries
 ```
 
-#### Room Model (`models/Room.js`)
+### 5.2 Services
+
+#### authService.js
+- `register(userData)` - Create user + generate tokens
+- `login(credentials)` - Verify credentials + generate tokens
+- `refreshAccessToken(token)` - Generate new access token
+- `logout(token)` - Revoke refresh token
+
+#### roomService.js
+- `createRoom(hostId, settings)` - Create new room with 4-char code
+- `joinRoom(roomCode, userId)` - Add opponent to room
+- `leaveRoom(roomCode, userId)` - Remove player (delete if host)
+- `getRoomByCode(code)` - Get room details
+
+### 5.3 Socket Handlers
+
+#### socketManager.js
+Initializes Socket.io with JWT authentication:
 ```javascript
-{
-  roomCode: String (unique, 4 chars, uppercase),
-  host: ObjectId (ref: 'User'),
-  players: [ObjectId] (ref: 'User'),
-  playerCount: Number (default: 2),
-  status: String ('waiting' | 'active' | 'completed' | 'cancelled'),
-  format: Number (1 | 3 | 5 - best of),
-  digits: Number (3 | 4),
-  difficulty: String ('easy' | 'hard'),
-  timestamps: true
-}
-
-Indexes:
-- createdAt: Auto-delete after 1 hour
+io.use(async (socket, next) => {
+  // Verify token from socket.handshake.auth.token
+  // Attach user to socket.user
+});
 ```
 
-### Controllers
+Exports:
+- `getIO()` - Get Socket.io instance
+- `getUserSocketId(userId)` - Get socket ID for user
 
-#### Auth Controller (`controllers/authController.js`)
-Handles HTTP requests for authentication:
-- `register(req, res)` - Register new user
-- `login(req, res)` - Login user
-- `getProfile(req, res)` - Get user profile (protected)
-- `refresh(req, res)` - Refresh access token
-- `logout(req, res)` - Logout (revoke refresh token)
-- `logoutAll(req, res)` - Logout from all devices
+#### lobbyHandler.js
+Room management events:
+- `create-room` → Creates room, joins socket room
+- `join-room` → Joins room, notifies host, starts game if full
+- `leave-room` → Leaves room, cleans up
+- `get-room` → Get room info
 
-Helper functions:
-- `getDeviceInfo(userAgent)` - Extract device type
-- `getIpAddress(req)` - Extract IP address
-- `getCookieOptions()` - Cookie configuration
-
-### Services
-
-#### Auth Service (`services/authService.js`)
-Business logic for authentication:
-- `register(userData, device, ipAddress)` - Create user + tokens
-- `login(credentials, device, ipAddress)` - Verify user + tokens
-- `getUserProfile(userId)` - Fetch user profile
-- `refreshAccessToken(refreshToken)` - Generate new access token
-- `logout(refreshToken)` - Revoke refresh token
-- `logoutAll(userId)` - Revoke all user's tokens
-
-#### Room Service (`services/roomService.js`)
-Manages game rooms:
-- `generateRoomCode()` - Generate unique 4-char code
-- `createRoom(hostId, settings)` - Create new room
-- `joinRoom(roomCode, playerId)` - Join existing room
-- `leaveRoom(roomCode, playerId)` - Leave room (delete if host)
-- `getRoomByCode(roomCode)` - Get room details
-
-### Middleware
-
-#### Auth Middleware (`middleware/authMiddleware.js`)
-- `protect(req, res, next)` - Verify JWT from Authorization header
-- Extracts token from "Bearer {token}" format
-- Verifies token with JWT_SECRET
-- Attaches user to req.user
-- Returns 401 if invalid/missing
-
-### Utilities
-
-#### Game Rules (`utils/gameRules.js`)
-```javascript
-validateInput(str, digits)
-  → Returns: { isValid: boolean, error: string }
-  → Checks: length, all digits, unique digits
-
-calculateBullsAndCows(secret, guess, digits)
-  → Returns: { 
-      bulls: number, 
-      cows: number, 
-      shit: number, 
-      isWin: boolean, 
-      error: string 
-    }
-  → Algorithm:
-    1. Validate secret and guess
-    2. Count bulls (same digit, same position)
-    3. Count cows (same digit, different position)
-    4. Calculate shit (digits - bulls - cows)
-    5. Check if won (bulls === digits)
-```
-
-#### Token Generator (`utils/tokenGenerator.js`)
-```javascript
-generateAccessToken(userId)
-  → JWT with 15 minutes expiry
-  → Signed with JWT_SECRET
-
-generateRefreshToken(userId)
-  → JWT with 30 days expiry
-  → Signed with JWT_REFRESH_SECRET (fallback to JWT_SECRET)
-```
-
-### Socket.io
-
-#### Socket Manager (`sockets/socketManager.js`)
-- Initializes Socket.io with CORS configuration
-- Authentication middleware: Verifies JWT from handshake
-- Attaches user to socket.user
-- Registers lobby handlers
-- Exports `getIO()` to access io instance
-
-#### Lobby Handler (`sockets/lobbyHandler.js`)
-Socket events for room management:
-
-**Client → Server:**
-- `create-room` - Create new room
-  - Payload: `{ mode, format, digits, difficulty }`
-  - Callback: `{ success, room? }`
-  
-- `join-room` - Join existing room
-  - Payload: `roomCode`
-  - Callback: `{ success, room? }`
-  - Emits to room: `player-joined`
-  - Emits to room if full: `game-start`
-  
-- `leave-room` - Leave room
-  - Payload: `roomCode`
-  - Callback: `{ success }`
-  - Emits to room: `player-left`
-  
-- `get-room` - Get room info
-  - Payload: `roomCode`
-  - Callback: `{ success, room? }`
-  
-- `room-message` - Send chat message
-  - Payload: `{ roomCode, message }`
-  - Emits to room: `room-message`
-  
-- `player-ready` - Signal ready status
-  - Payload: `roomCode`
-  - Emits to room: `player-ready`
-
-**Server → Client:**
-- `player-joined` - New player joined
-- `player-left` - Player left
-- `game-start` - Game starting (room full)
-- `room-message` - Chat message
-- `player-ready` - Player ready status
+#### gameHandler.js
+Game logic events:
+- `game-init` → Get current game state
+- `submit-secret` → Submit secret number
+- `submit-guess` → Make a guess
 
 ---
 
-## Frontend Documentation
+## 6. Frontend Documentation
 
-### App Structure (App.jsx)
+### 6.1 Key Components
+
+#### OnlineGame.jsx
+Three-phase game UI:
+1. **SETUP**: Submit secret number with number pad
+2. **PLAYING**: Turn indicator, guess history, make guesses
+3. **GAME_OVER**: Victory/defeat modal with scores
+
+#### RoomWaiting.jsx
+Waiting room that:
+- Joins socket room on mount
+- Shows room info and players
+- Listens for `game-start` event
+- Navigates to OnlineGame when opponent joins
+
+#### VsFriendModal.jsx
+Modal for creating/joining games:
+- Generate room code (creates room via API)
+- Enter room code to join
+- Invite by username (coming soon)
+
+### 6.2 Stores (Zustand)
+
+#### useGameStore.js
+Online game state:
 ```javascript
-Routes:
-- /                  → Redirect to /auth
-- /auth              → AuthPage (unified login/register)
-- /login             → Redirect to /auth
-- /register          → Redirect to /auth
-- /home              → Home (Protected)
-- /profile           → UserProfile (Protected)
-- /offline/setup     → PassAndPlaySetup
-- /offline/game      → OfflineGame
-- /lobby/create      → CreateRoom (Protected)
-- /lobby/join        → JoinRoom (Protected)
-- /lobby/room/:code  → RoomWaiting (Protected)
-
-Global Components:
-- ToastContainer     → Toast notifications (top-right, z-100)
-
-ProtectedRoute Component:
-- Checks localStorage for token
-- Redirects to /auth if not found
+{
+  gameState: 'SETUP' | 'PLAYING' | 'GAME_OVER',
+  roomCode: string,
+  currentTurn: string,        // User ID
+  logs: [{ player, guess, bulls, cows, shit }],
+  roundNumber: number,
+  scores: { [oderId]: wins },
+  mySecret: string,           // Local only
+  isMySecretSubmitted: boolean,
+  isOpponentReady: boolean,
+  winner: string,
+  winnerName: string
+}
 ```
-
-### State Management (Zustand Stores)
-
-#### Auth Store (`store/useAuthStore.js`)
-```javascript
-State:
-- user: Object | null
-- token: String | null
-- isAuthenticated: Boolean
-- loading: Boolean
-- error: String | null
 
 Actions:
-- register(userData) → Register and login
-- login(credentials) → Login user
-- logout() → Clear state and tokens
-- getProfile() → Fetch user profile
-- clearError() → Clear error message
-
-Persistence:
-- Persists: user, token, isAuthenticated
-- Storage: localStorage (key: 'auth-storage')
-
-Side Effects:
-- Sets token in localStorage
-- Initializes Socket.io on login
-- Destroys Socket.io on logout
-```
-
-#### Offline Game Store (`store/useOfflineGameStore.js`)
-```javascript
-State:
-- gamePhase: 'SETUP' | 'PLAYING' | 'GAME_OVER'
-- turn: 'PLAYER_1' | 'PLAYER_2'
-- digits: 3 | 4
-- player1Secret: String
-- player2Secret: String
-- player1Guesses: Array<{ guess, bulls, cows, shit, attempt }>
-- player2Guesses: Array<{ guess, bulls, cows, shit, attempt }>
-- winner: 'PLAYER_1' | 'PLAYER_2' | 'DRAW' | null
-
-Actions:
-- setDigits(digits) → Set game digits
-- setPlayer1Secret(secret) → Store P1 secret
-- setPlayer2Secret(secret) → Store P2 secret
-- startGame() → Validate and start game
-- submitGuess(guess) → Process guess, switch turn, check win
-- resetGame() → Reset to SETUP phase
-- playAgain() → Same as resetGame
-
-No Persistence: State is in-memory only
-```
-
-#### Toast Store (`store/useToastStore.js`)
-```javascript
-State:
-- toasts: Array<{ id, message, type }>
-
-Actions:
-- addToast(message, type) → Add toast notification
-  - type: 'success' | 'error' | 'warning' | 'info'
-  - Uses Date.now() for unique ID
-  - Auto-removes after 3000ms (3 seconds)
-- removeToast(id) → Remove specific toast by ID
-- clearAllToasts() → Clear all toasts
-
-No Persistence: State is in-memory only
-
-Usage:
-import useToastStore from '../store/useToastStore'
-const { addToast } = useToastStore()
-addToast('Welcome to the Arena!', 'success')
-addToast('Login failed', 'error')
-```
-
-### Services
-
-#### API Service (`services/api.js`)
-```javascript
-Base URL: http://localhost:5000/api (from VITE_API_URL)
-
-Request Interceptor:
-- Adds Authorization header with Bearer token from localStorage
-
-Response Interceptor:
-- Handles 401: Clear token, redirect to /login
-- Rejects other errors
-
-Usage:
-import api from '../services/api'
-api.get('/auth/profile')
-api.post('/auth/login', credentials)
-```
-
-#### Socket Service (`services/socket.js`)
-```javascript
-Socket URL: http://localhost:5000 (from VITE_SOCKET_URL)
-
-Functions:
-- initializeSocket(token) → Create socket instance
-- getSocket() → Get existing socket
-- connectSocket() → Connect if disconnected
-- disconnectSocket() → Disconnect if connected
-- destroySocket() → Disconnect and destroy
-
-Features:
-- Auth via handshake.auth.token
-- Auto-connect: false (manual control)
-- Event listeners: connect, disconnect, connect_error
-
-Usage:
-import { initializeSocket, getSocket } from '../services/socket'
-initializeSocket(token)
-const socket = getSocket()
-socket.emit('create-room', settings, callback)
-```
-
-### Components
-
-#### Home Component (`components/Home.jsx`)
-Main menu after login:
-- 2 game mode buttons:
-  - 📱 Pass & Play (Offline) → `/offline/setup`
-  - ⚔️ VS Friend → Opens VsFriendModal
-- Footer buttons:
-  - ❓ How to Play → Alert (not implemented)
-  - 👤 My Profile → `/profile`
-- Logout button (top-right)
-- Modals: VsFriendModal
-
-#### PassAndPlaySetup Component (`components/PassAndPlaySetup.jsx`)
-Two-step secret setup for offline mode:
-
-**State:**
-- `digits` - 3 or 4 (local state)
-- `step` - 1 or 2 (Player 1 or 2)
-- `secret` - Current input (local state)
-- `error` - Error message
-- `showSecret` - Toggle visibility
-
-**Flow:**
-1. Player 1 selects digits (3 or 4)
-2. Player 1 enters secret via number pad
-3. Click "Next" → Store in useOfflineGameStore
-4. Player 2 enters secret via number pad
-5. Click "Start Game" → Navigate to `/offline/game`
-
-**Features:**
-- Number pad (0-9 grid)
-- Backspace button
-- Show/Hide toggle (eye icon)
-- Disabled digits (already used or max reached)
-- Visual feedback (stars vs numbers)
-- Error messages
-- Cancel button → `/home`
-
-#### OfflineGame Component (`components/OfflineGame.jsx`)
-**STATUS: TO BE CREATED**
-
-**Required Features:**
-- Display current turn (Player 1 or Player 2)
-- Number pad for guess input
-- Submit guess button
-- Display guess history:
-  - Two columns (Player 1 | Player 2)
-  - Show: guess, bulls, cows, shit, attempt number
-- Real-time feedback after each guess
-- Turn switching
-- Win condition detection
-- Game Over modal:
-  - Show winner
-  - "Play Again" button → Reset game
-  - "Home" button → Navigate to `/home`
-
-**Implementation Plan:**
-```javascript
-import useOfflineGameStore from '../store/useOfflineGameStore'
-import { validateInput } from '../utils/gameRules'
-
-State needed:
-- currentGuess (local state)
-- error (local state)
-
-Store subscriptions:
-- gamePhase, turn, digits
-- player1Guesses, player2Guesses
-- winner
-
-UI Sections:
-1. Header: Show current player turn
-2. Guess Input: Number pad + display
-3. History: Two-column table
-4. Game Over Modal: Conditional render
-```
-
-#### AuthPage Component (`features/auth/AuthPage.jsx`)
-Unified login/register page with "Cyber Minimalist" design.
-
-**State:**
-- `activeTab` - 'login' | 'register'
-- `loading` - Boolean (API request in progress)
-- `formData` - { username, email, password, confirmPassword }
-- `fieldErrors` - Per-field error messages
-
-**Features:**
-- Tab switcher (pill-shaped toggle)
-- Dynamic form fields based on active tab
-- Field-level validation with red border on error
-- Toast notifications for success/error
-- Direct axios API calls to backend
-- Saves token to localStorage on success
-- Glitch text effect on title
-- Scanlines overlay effect
-- Tech-border "Secure Connection" footer
-
-**Flow:**
-1. User selects Login or Register tab
-2. Fills in form fields
-3. Form validates on submit
-4. API request to `/api/auth/login` or `/api/auth/register`
-5. On success: Toast, save token, navigate to `/home`
-6. On error: Toast, highlight error field
-
-#### AuthComponents (`features/auth/AuthComponents.jsx`)
-Reusable UI components for authentication:
-
-**AuthInput:**
-- Props: label, type, placeholder, icon, value, onChange, error
-- Dark themed with icon support
-- Password toggle (show/hide)
-- Error state: red border, red icon, error message below
-- Focus ring animation
-
-**PrimaryButton:**
-- Props: children, onClick, disabled, loading
-- Neon yellow with shadow effect
-- Loading spinner when loading=true
-- Hover/active scale animations
-
-**SecondaryButton:**
-- Outlined variant of PrimaryButton
-- Border turns solid on hover
-
-**TabSwitcher:**
-- Props: activeTab, onTabChange
-- Pill-shaped container
-- Sliding yellow background on active tab
-
-**Divider:**
-- "OR" text divider line
-
-**TechFooter:**
-- "Secure Connection" text with tech corner borders
-
-#### ToastContainer Component (`components/ui/ToastContainer.jsx`)
-Global toast notification system:
-
-**Position:** Fixed, top-right (top-4 right-4), z-100
-
-**Toast Types:**
-- success: Green border, checkmark icon
-- error: Red border, warning icon
-- warning: Yellow border, lightning icon
-- info: Blue border, info icon
-
-**Features:**
-- Slide-in animation from right
-- Glassmorphism effect (backdrop-blur)
-- Close button on each toast
-- Auto-dismiss after 3 seconds
-- Multiple toasts stack vertically
-
-#### CreateRoom Component (`features/lobby/CreateRoom.jsx`)
-- Settings form:
-  - Format: 1 | 3 | 5 (best of)
-  - Digits: 3 | 4
-  - Difficulty: easy | hard
-- "Create Room" button
-- Emits `create-room` socket event
-- Navigates to `/lobby/{roomCode}` on success
+- `initializeGame(roomCode, gameData)`
+- `submitSecret(secret, callback)`
+- `makeGuess(guess, callback)`
+- `setupSocketListeners()`
+- `removeSocketListeners()`
+- `resetGame()`
 
 ---
 
-## Game Logic
+## 7. Game Logic
 
-### Bulls and Cows Calculation Algorithm
+### calculateBullsAndCows(secret, guess, digits)
 
-The core game logic is in `gameRules.js` (shared between backend and frontend):
+Located in `Backend/utils/gameRules.js`:
 
 ```javascript
-// Example: Secret = "1234", Guess = "1352"
-calculateBullsAndCows("1234", "1352", 4)
-
-Step-by-step:
-1. Validate secret: "1234" ✓ (4 unique digits)
-2. Validate guess: "1352" ✓ (4 unique digits)
-
-3. Count Bulls (correct position):
-   - Position 0: '1' === '1' ✓ → bulls = 1
-   - Position 1: '2' !== '3' ✗
-   - Position 2: '3' !== '5' ✗
-   - Position 3: '4' !== '2' ✗
-   → Total Bulls: 1
-
-4. Count Cows (wrong position):
-   - Position 1: '3' in secret? Yes (at pos 2) → cows = 1
-   - Position 2: '5' in secret? No
-   - Position 3: '2' in secret? Yes (at pos 1) → cows = 2
-   → Total Cows: 2
-
-5. Calculate Shit (not in secret):
-   - shit = digits - bulls - cows
-   - shit = 4 - 1 - 2 = 1
-
-6. Check Win:
-   - isWin = bulls === digits
-   - isWin = 1 === 4 = false
-
-Result: { bulls: 1, cows: 2, shit: 1, isWin: false, error: null }
+// Example: secret = "1234", guess = "1325"
+// Bulls = 1 (the "1" is correct position)
+// Cows = 2 (the "3" and "2" exist but wrong position)
+// Shit = 1 (the "5" doesn't exist)
 ```
 
-### Validation Rules
-- **Length**: Must be exactly `digits` length (3 or 4)
-- **Digits Only**: All characters must be 0-9
-- **Unique**: All digits must be unique
-- **No Leading Zero**: (Optional, not enforced currently)
+Algorithm:
+1. Validate both inputs (unique digits, correct length)
+2. Count bulls (same digit, same position)
+3. Count cows (same digit, different position)
+4. Calculate shit (digits - bulls - cows)
+5. Check win condition (bulls === digits)
 
 ---
 
-## API Endpoints
+## 8. API Endpoints
 
-### Authentication
+### Authentication (`/api/auth`)
 
-#### POST /api/auth/register
-**Description:** Register a new user  
-**Access:** Public  
-**Body:**
-```json
-{
-  "username": "player1",
-  "email": "player1@example.com",
-  "password": "password123"
-}
-```
-**Response:**
-```json
-{
-  "_id": "user_id",
-  "username": "player1",
-  "email": "player1@example.com",
-  "accessToken": "jwt_access_token"
-}
-```
-**Cookies:** Sets `refreshToken` httpOnly cookie  
-**Status:** 201 Created | 400 Bad Request
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/register` | Create new user | No |
+| POST | `/login` | Login user | No |
+| GET | `/profile` | Get user profile | Yes |
+| POST | `/refresh` | Refresh access token | No |
+| POST | `/logout` | Logout (revoke token) | Yes |
 
-#### POST /api/auth/login
-**Description:** Login user  
-**Access:** Public  
-**Body:**
-```json
-{
-  "email": "player1@example.com",
-  "password": "password123"
-}
-```
-**Response:**
-```json
-{
-  "_id": "user_id",
-  "username": "player1",
-  "email": "player1@example.com",
-  "accessToken": "jwt_access_token"
-}
-```
-**Cookies:** Sets `refreshToken` httpOnly cookie  
-**Status:** 200 OK | 401 Unauthorized
+### Matches (`/api/matches`)
 
-#### GET /api/auth/profile
-**Description:** Get user profile  
-**Access:** Protected (requires Bearer token)  
-**Response:**
-```json
-{
-  "_id": "user_id",
-  "username": "player1",
-  "email": "player1@example.com",
-  "stats": {
-    "totalGames": 10,
-    "wins": 5,
-    "losses": 3,
-    "draws": 2
-  },
-  "friends": [],
-  "isOnline": false
-}
-```
-**Status:** 200 OK | 401 Unauthorized | 404 Not Found
-
-#### POST /api/auth/refresh
-**Description:** Refresh access token  
-**Access:** Public (requires refreshToken cookie)  
-**Response:**
-```json
-{
-  "accessToken": "new_jwt_access_token"
-}
-```
-**Status:** 200 OK | 401 Unauthorized
-
-#### POST /api/auth/logout
-**Description:** Logout user (revoke refresh token)  
-**Access:** Protected  
-**Response:**
-```json
-{
-  "message": "Logged out successfully"
-}
-```
-**Cookies:** Clears `refreshToken` cookie  
-**Status:** 200 OK | 400 Bad Request
-
-#### POST /api/auth/logout-all
-**Description:** Logout from all devices  
-**Access:** Protected  
-**Response:**
-```json
-{
-  "message": "Logged out from all devices"
-}
-```
-**Cookies:** Clears `refreshToken` cookie  
-**Status:** 200 OK | 400 Bad Request
-
-### Health Check
-
-#### GET /health
-**Description:** Server health check  
-**Access:** Public  
-**Response:**
-```json
-{
-  "status": "OK",
-  "message": "Server is running"
-}
-```
-**Status:** 200 OK
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/create` | Create game room | Yes |
+| POST | `/join` | Join game room | Yes |
+| POST | `/invite` | Invite friend | Yes |
+| GET | `/:roomCode` | Get room details | Yes |
 
 ---
 
-## Socket Events
+## 9. Socket Events
 
-### Connection
-**Event:** `connection`  
-**Direction:** Server side  
-**Description:** Fired when client connects  
-**Auth:** Requires token in handshake.auth.token  
-**Data:** socket.user contains authenticated user
+### Client → Server
 
-### Create Room
-**Event:** `create-room`  
-**Direction:** Client → Server  
-**Payload:**
-```javascript
-{
-  format: 1 | 3 | 5,
-  digits: 3 | 4,
-  difficulty: 'easy' | 'hard'
-}
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `create-room` | `{ format, digits, difficulty }` | Create new room |
+| `join-room` | `roomCode` | Join existing room |
+| `leave-room` | `roomCode` | Leave room |
+| `get-room` | `roomCode` | Get room info |
+| `submit-secret` | `{ roomCode, secret }` | Submit secret number |
+| `submit-guess` | `{ roomCode, guess }` | Make a guess |
+| `game-init` | `{ roomCode }` | Get current game state |
+
+### Server → Client
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `player-joined` | `{ opponent }` | Opponent joined room |
+| `player-left` | `{ oderId }` | Player left room |
+| `game-start` | `{ roomCode, format, digits, host, opponent }` | Game starting |
+| `opponent-ready` | `{ oderId }` | Opponent submitted secret |
+| `match-start` | `{ currentTurn, roundNumber }` | Both players ready |
+| `turn-result` | `{ player, guess, bulls, cows, shit, nextTurn }` | Guess result |
+| `round-over` | `{ roundWinner, scores, nextRound }` | Round won |
+| `game-over` | `{ winner, winnerName, finalScores }` | Match finished |
+| `match-invite` | `{ roomCode, host, format }` | Friend invite |
+
+---
+
+## 10. State Management
+
+### Auth Flow
 ```
-**Callback:**
-```javascript
-{
-  success: true,
-  room: {
-    roomCode: "AB12",
-    host: "user_id",
-    players: ["user_id"],
-    playerCount: 1,
-    format: 3,
-    digits: 4,
-    difficulty: "easy",
-    status: "waiting"
-  }
-}
-```
-
-### Join Room
-**Event:** `join-room`  
-**Direction:** Client → Server  
-**Payload:** `"AB12"` (roomCode)  
-**Callback:**
-```javascript
-{
-  success: true,
-  room: { ...room details }
-}
-```
-**Emits to room:** `player-joined`, `game-start` (if full)
-
-### Leave Room
-**Event:** `leave-room`  
-**Direction:** Client → Server  
-**Payload:** `"AB12"` (roomCode)  
-**Callback:**
-```javascript
-{
-  success: true
-}
-```
-**Emits to room:** `player-left`
-
-### Get Room
-**Event:** `get-room`  
-**Direction:** Client → Server  
-**Payload:** `"AB12"` (roomCode)  
-**Callback:**
-```javascript
-{
-  success: true,
-  room: { ...room details }
-}
+Login → Store token in localStorage → Initialize socket with token
+     → Store user in useAuthStore → Navigate to /home
 ```
 
-### Room Message
-**Event:** `room-message`  
-**Direction:** Bidirectional  
-**Client → Server:**
-```javascript
-{
-  roomCode: "AB12",
-  message: "Hello!"
-}
+### Game Flow
 ```
-**Server → All in room:**
-```javascript
-{
-  sender: {
-    _id: "user_id",
-    username: "player1"
-  },
-  message: "Hello!",
-  timestamp: "2026-01-16T..."
-}
-```
-
-### Player Ready
-**Event:** `player-ready`  
-**Direction:** Bidirectional  
-**Client → Server:** `"AB12"` (roomCode)  
-**Server → All in room:**
-```javascript
-{
-  playerId: "user_id"
-}
+1. Create/Join Room → Navigate to /lobby/room/:roomCode
+2. RoomWaiting joins socket room
+3. Opponent joins → game-start event
+4. initializeGame() → Navigate to /game/online/:roomCode
+5. OnlineGame sets up socket listeners
+6. SETUP phase: Both submit secrets
+7. match-start → PLAYING phase
+8. Turn-based guessing with turn-result events
+9. Win → round-over or game-over event
+10. resetGame() → Navigate home
 ```
 
 ---
 
-## State Management
+## 11. Authentication Flow
 
-### Zustand Store Pattern
-All Zustand stores follow this pattern:
+### Access Token (15 min)
+- Stored in localStorage
+- Sent in `Authorization: Bearer {token}` header
+- Used for API requests and socket auth
 
-```javascript
-import { create } from 'zustand';
-
-const useStore = create((set, get) => ({
-  // State
-  value: initialValue,
-  
-  // Actions
-  action: (params) => {
-    const currentState = get();
-    set({ value: newValue });
-  }
-}));
-
-// Usage in components
-const { value, action } = useStore();
-```
-
-### Store Comparison
-
-| Feature | useAuthStore | useOfflineGameStore | useGameStore | useToastStore |
-|---------|--------------|---------------------|--------------|---------------|
-| **Purpose** | User auth | Offline game | Online game | Notifications |
-| **Persistence** | Yes (localStorage) | No (in-memory) | No (socket sync) | No (in-memory) |
-| **Network** | HTTP API | None | Socket.io | None |
-| **Lifecycle** | Global (session) | Per-game | Per-match | Global (session) |
+### Refresh Token (30 days)
+- Stored in httpOnly cookie
+- Used to get new access token when expired
+- Revoked on logout
 
 ---
 
-## Authentication Flow
+## 12. Game Flow
 
-### Registration Flow
 ```
-1. User fills RegisterForm
-2. Frontend: useAuthStore.register(userData)
-3. POST /api/auth/register
-4. Backend: Hash password with bcrypt
-5. Backend: Create user in MongoDB
-6. Backend: Generate access + refresh tokens
-7. Backend: Store refresh token in RefreshToken collection
-8. Backend: Set refreshToken in httpOnly cookie
-9. Backend: Return user + accessToken
-10. Frontend: Store token in localStorage
-11. Frontend: Initialize Socket.io with token
-12. Frontend: Navigate to /home
-```
-
-### Login Flow
-```
-1. User fills LoginForm
-2. Frontend: useAuthStore.login(credentials)
-3. POST /api/auth/login
-4. Backend: Find user by email
-5. Backend: Compare password with bcrypt
-6. Backend: Generate access + refresh tokens
-7. Backend: Store refresh token in RefreshToken collection
-8. Backend: Set refreshToken in httpOnly cookie
-9. Backend: Return user + accessToken
-10. Frontend: Store token in localStorage
-11. Frontend: Initialize Socket.io with token
-12. Frontend: Navigate to /home
-```
-
-### Token Refresh Flow
-```
-1. Frontend: Access token expires (15 min)
-2. Frontend: POST /api/auth/refresh (with cookie)
-3. Backend: Read refreshToken from cookie
-4. Backend: Verify refresh token
-5. Backend: Check if revoked or expired
-6. Backend: Generate new access token
-7. Backend: Return new accessToken
-8. Frontend: Update localStorage
-```
-
-### Logout Flow
-```
-1. User clicks Logout
-2. Frontend: useAuthStore.logout()
-3. POST /api/auth/logout (optional)
-4. Backend: Revoke refresh token (set isRevoked = true)
-5. Backend: Clear refreshToken cookie
-6. Frontend: Remove token from localStorage
-7. Frontend: Destroy Socket.io connection
-8. Frontend: Navigate to /auth
-```
-
-### Protected Route Flow
-```
-1. User navigates to protected route
-2. ProtectedRoute checks localStorage for token
-3. If no token → Redirect to /auth
-4. If token exists → Render children
-5. API request with expired token → 401
-6. Axios interceptor → Clear token, redirect to /auth
+┌──────────────┐
+│    SETUP     │  Both players choose secrets
+└──────┬───────┘
+       │ both submit-secret
+       ▼
+┌──────────────┐
+│   PLAYING    │  Alternating turns guessing
+└──────┬───────┘
+       │ guess correct (4 bulls)
+       ▼
+┌──────────────┐
+│  Round Over  │  Update scores
+└──────┬───────┘
+       │
+       ├─── Not enough wins → Back to SETUP
+       │
+       ▼
+┌──────────────┐
+│  GAME_OVER   │  Show winner, final scores
+└──────────────┘
 ```
 
 ---
 
-## UI Design System
+## 13. Environment Variables
 
-### Design Theme: "Cyber Minimalist"
-A dark, futuristic design with neon accents and tech-inspired elements.
-
-### Tailwind CSS Configuration (`tailwind.config.js`)
-```javascript
-theme: {
-  extend: {
-    colors: {
-      "primary": "#facc14",           // Neon Yellow
-      "primary-content": "#000000",   // Black (for text on primary)
-      "secondary": "#3b82f6",         // Electric Blue
-      "background-light": "#f8f8f5",  // Light mode (not used)
-      "background-dark": "#111827",   // Deep charcoal
-      "surface-dark": "#1f2937",      // Lighter charcoal (cards)
-      "input-bg": "#374151",          // Input field background
-    },
-    fontFamily: {
-      'space': ['"Space Grotesk"', 'sans-serif'],
-    },
-    boxShadow: {
-      'neon': '0 0 10px rgba(250, 204, 20, 0.5)',
-      'neon-strong': '0 0 20px rgba(250, 204, 20, 0.7)',
-    },
-  },
-}
-```
-
-### Custom CSS Classes (`index.css`)
-
-**Space Grotesk Font:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
-```
-
-**Scanlines Effect:**
-```css
-.scanlines {
-  position: fixed;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.1) 0px,
-    rgba(0, 0, 0, 0.1) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-  pointer-events: none;
-  z-index: 50;
-}
-```
-
-**Glitch Text Effect:**
-```css
-.glitch-text {
-  text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
-  animation: glitch 2s infinite;
-}
-```
-
-**Tech Border Corners:**
-```css
-.tech-border::before, .tech-border::after {
-  content: '';
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border: 1px solid #facc14;
-}
-```
-
-**Toast Slide-In Animation:**
-```css
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-.animate-slideIn {
-  animation: slideIn 0.3s ease-out forwards;
-}
-```
-
----
-
-## Game Modes
-
-### 1. Pass & Play (Offline Mode)
-
-**Status:** Setup complete, Gameplay component pending
-
-**Flow:**
-```
-1. Home → "Pass & Play" button
-2. Navigate to /offline/setup (PassAndPlaySetup)
-3. Player 1 selects digits (3 or 4)
-4. Player 1 enters secret via number pad
-5. Click "Next" → Store in useOfflineGameStore
-6. Player 2 enters secret via number pad
-7. Click "Start Game" → startGame() in store
-8. Navigate to /offline/game (OfflineGame - TO BE CREATED)
-9. Players alternate turns:
-   - Current player enters guess via number pad
-   - Submit guess → submitGuess() in store
-   - Calculate bulls/cows using gameRules.js
-   - Display feedback
-   - Switch turn
-10. First player to guess correctly wins
-11. Show Game Over modal with winner
-12. "Play Again" → Reset store, go to /offline/setup
-```
-
-**No Backend Required:** All state in `useOfflineGameStore`
-
-**Architecture:**
-- **Setup Phase:** PassAndPlaySetup component
-- **Playing Phase:** OfflineGame component (to be created)
-- **Game Over:** Modal in OfflineGame
-- **State:** Zustand store (in-memory)
-- **Logic:** gameRules.js (shared utility)
-
-### 2. VS Friend (Online Mode)
-
-**Status:** Lobby system complete, Game logic pending
-
-**Flow:**
-```
-1. Home → "VS Friend" button → VsFriendModal
-2. Choose: Create Room or Join Room
-3a. Create Room:
-    - Select settings (format, digits, difficulty)
-    - Socket: emit 'create-room'
-    - Navigate to /lobby/room/{code}
-3b. Join Room:
-    - Enter room code
-    - Socket: emit 'join-room'
-    - Navigate to /lobby/room/{code}
-4. RoomWaiting component:
-   - Show players
-   - Chat functionality
-   - Ready status
-5. When 2 players → Socket: emit 'game-start'
-6. Navigate to game (TO BE IMPLEMENTED)
-7. Real-time gameplay via Socket.io
-8. Update stats after game
-```
-
-**Backend Required:** Room management, Socket.io
-
----
-
-## Development Guide
-
-### Prerequisites
-- Node.js (v16+)
-- MongoDB (running locally or cloud)
-- Git
-
-### Setup Instructions
-
-1. **Clone Repository:**
+### Backend (`.env`)
 ```bash
-git clone <repository-url>
-cd Bulls_Cows
-```
-
-2. **Install Dependencies:**
-```bash
-# Root workspace
-npm install
-
-# Backend
-cd Backend
-npm install
-
-# Frontend
-cd ../Frontend
-npm install
-```
-
-3. **Environment Variables:**
-
-**Backend (.env):**
-```env
 PORT=5000
-NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/bulls-cows
-JWT_SECRET=your_secret_key_here
+MONGO_URI=mongodb://localhost:27017/bulls_cows
+JWT_SECRET=your_jwt_secret_here
 JWT_REFRESH_SECRET=your_refresh_secret_here
-JWT_ACCESS_EXPIRE=15m
-JWT_REFRESH_EXPIRE=30d
+JWT_EXPIRE=15m
 FRONTEND_URL=http://localhost:5173
-CLIENT_URL=http://localhost:5173
+NODE_ENV=development
 ```
 
-**Frontend (.env):**
-```env
+### Frontend (`.env`)
+```bash
 VITE_API_URL=http://localhost:5000/api
 VITE_SOCKET_URL=http://localhost:5000
 ```
 
-4. **Start Development Servers:**
+---
 
-**Backend:**
+## 14. Development Guide
+
+### Setup
 ```bash
-cd Backend
-npm run dev   # Uses nodemon for auto-reload
+# Install all dependencies
+npm install
+
+# Start backend (from Backend folder)
+cd Backend && npm start
+
+# Start frontend (from Frontend folder)
+cd Frontend && npm run dev
 ```
-
-**Frontend:**
-```bash
-cd Frontend
-npm run dev   # Starts Vite dev server
-```
-
-**Or use VS Code tasks:**
-- "Start Backend Server" (npm start in Backend)
-- "Start Frontend Dev Server" (npm run dev in Frontend)
-
-5. **Access Application:**
-- Frontend: http://localhost:5173
-- Backend: http://localhost:5000
-- Health check: http://localhost:5000/health
-
-### Git Workflow
-
-**Current Branch:** `feature/OflineMode`
-
-**Branch Strategy:**
-```
-main (production)
-  ↑
-develop (integration)
-  ↑
-feature/OflineMode (offline game mode)
-feature/OnlineGame (online multiplayer)
-```
-
-**Common Commands:**
-```bash
-# Check current branch
-git branch --show-current
-
-# Switch branch
-git checkout develop
-git checkout feature/OflineMode
-
-# Pull latest
-git pull origin develop
-
-# Merge develop into feature
-git checkout feature/OflineMode
-git merge origin/develop
-
-# Stage and commit
-git add .
-git commit -m "Descriptive message"
-
-# Push to remote
-git push origin feature/OflineMode
-```
-
-### Code Style
-
-**Backend:**
-- Use `const` / `let` (no `var`)
-- Async/await over promises
-- Error handling with try-catch
-- JSDoc comments for functions
-- Consistent naming: camelCase for variables/functions
-
-**Frontend:**
-- Functional components only (no class components)
-- Hooks for state management
-- Arrow functions for components
-- Props destructuring
-- Inline styles (no CSS modules yet)
 
 ### Testing
-
-**Currently:** No test suite implemented
-
-**Planned:**
-- Backend: Jest + Supertest
-- Frontend: Vitest + React Testing Library
-
-### Debugging
-
-**Backend:**
 ```bash
-# View logs
-npm run dev   # Morgan logs HTTP requests
+# Backend tests
+cd Backend && npm test
 
-# Debug mode (VS Code)
-F5 → Attach to Node process
+# Frontend tests
+cd Frontend && npm test
 ```
 
-**Frontend:**
-```bash
-# React DevTools (browser extension)
-# Zustand DevTools (browser extension)
+### Common Tasks
 
-# View state
-import useOfflineGameStore from './store/useOfflineGameStore'
-console.log(useOfflineGameStore.getState())
-```
+**Add new socket event:**
+1. Add handler in `lobbyHandler.js` or `gameHandler.js`
+2. Add listener in appropriate store (`useGameStore.js`)
+3. Add cleanup in `removeSocketListeners()`
 
----
+**Add new API endpoint:**
+1. Add route in `routes/` folder
+2. Add controller function in `controllers/`
+3. Add service function if needed in `services/`
 
-## Environment Variables
-
-### Backend Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PORT` | No | 5000 | Server port |
-| `NODE_ENV` | No | development | Environment mode |
-| `MONGODB_URI` | Yes | - | MongoDB connection string |
-| `JWT_SECRET` | Yes | - | Secret for access tokens |
-| `JWT_REFRESH_SECRET` | No | JWT_SECRET | Secret for refresh tokens |
-| `JWT_ACCESS_EXPIRE` | No | 15m | Access token expiry |
-| `JWT_REFRESH_EXPIRE` | No | 30d | Refresh token expiry |
-| `FRONTEND_URL` | No | http://localhost:5173 | Frontend URL for CORS |
-| `CLIENT_URL` | No | http://localhost:5173 | Client URL for CORS |
-
-### Frontend Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `VITE_API_URL` | No | http://localhost:5000/api | Backend API base URL |
-| `VITE_SOCKET_URL` | No | http://localhost:5000 | Socket.io server URL |
+**Add new game feature:**
+1. Update `activeGames` structure in `lobbyHandler.js`
+2. Update `gameHandler.js` socket events
+3. Update `useGameStore.js` state and actions
+4. Update `OnlineGame.jsx` UI
 
 ---
 
-## Next Steps
+## Appendix: Quick Reference
 
-### Immediate Tasks (Feature: Offline Mode)
-1. **Create OfflineGame Component**
-   - Number pad for guess input
-   - Display guess history (two columns)
-   - Turn indicator
-   - Bulls/Cows/Shit feedback
-   - Game Over modal
-   - "Play Again" functionality
+### Room Codes
+- 4 uppercase alphanumeric characters
+- Generated randomly, verified unique
+- Auto-expire after 1 hour
 
-2. **Test Offline Mode End-to-End**
-   - Setup → Gameplay → Game Over
-   - 3-digit and 4-digit modes
-   - Win detection
-   - Error handling
+### Game Formats
+- Best of 1: First to 1 win
+- Best of 3: First to 2 wins
+- Best of 5: First to 3 wins
 
-### Future Tasks
-1. **Online Game Logic**
-   - Socket.io gameplay events
-   - Turn management
-   - Secret submission
-   - Guess validation server-side
-   - Best-of-N format tracking
-   - Match results
-
-2. **User Profile Enhancements**
-   - Stats display
-   - Friend system
-   - Match history
-   - Leaderboard
-
-3. **UI/UX Improvements**
-   - Responsive design
-   - Loading states
-   - Animations
-   - Tutorial/How to Play
-   - Error boundaries
-
-4. **Testing**
-   - Unit tests (backend services)
-   - Integration tests (API endpoints)
-   - Component tests (React components)
-   - E2E tests (Playwright/Cypress)
-
-5. **Deployment**
-   - Production environment setup
-   - CI/CD pipeline
-   - MongoDB Atlas
-   - Hosting (Vercel/Netlify + Railway/Render)
+### Digit Modes
+- 3 digits: Faster games
+- 4 digits: Standard mode
 
 ---
 
-## Troubleshooting
-
-### Common Issues
-
-**1. "Cannot connect to MongoDB"**
-- Check if MongoDB is running: `mongod --version`
-- Verify MONGODB_URI in .env
-- Check network/firewall settings
-
-**2. "401 Unauthorized"**
-- Check if token is in localStorage
-- Verify token format: "Bearer {token}"
-- Check token expiry (15 min for access token)
-- Try refreshing token or re-login
-
-**3. "Socket connection error"**
-- Verify backend is running on port 5000
-- Check VITE_SOCKET_URL in frontend .env
-- Ensure token is valid
-- Check browser console for errors
-
-**4. "Room not found"**
-- Rooms auto-delete after 1 hour
-- Verify room code is correct (4 chars)
-- Check if room status is not 'cancelled'
-
-**5. "Port already in use"**
-- Check if another process is using port 5000
-- Kill process: `taskkill /F /IM node.exe` (Windows)
-- Change PORT in .env
-
-**6. "Module not found"**
-- Run `npm install` in affected folder
-- Delete node_modules and package-lock.json, reinstall
-- Check import paths (case-sensitive)
-
----
-
-## Glossary
-
-**Bulls:** Correct digit in correct position  
-**Cows:** Correct digit in wrong position  
-**Shit:** Digit not in the secret number  
-
-**Access Token:** Short-lived JWT for API authentication (15 min)  
-**Refresh Token:** Long-lived JWT for getting new access tokens (30 days)  
-
-**Pass & Play:** Offline mode where players share one device  
-**Best of N:** Match format (best of 1, 3, or 5 games)  
-
-**Room:** Multiplayer lobby where players wait before game starts  
-**Room Code:** Unique 4-character identifier for a room  
-
-**Zustand:** State management library for React  
-**Socket.io:** Real-time bidirectional communication library  
-
-**Mongoose:** ODM (Object Data Modeling) library for MongoDB  
-**bcryptjs:** Password hashing library  
-**JWT:** JSON Web Token for authentication  
-**Tailwind CSS:** Utility-first CSS framework  
-**PostCSS:** CSS processing tool  
-
----
-
-## Contact & Support
-
-**Repository:** [GitHub URL]  
-**Documentation:** This file (TECHNICAL_DOCUMENTATION.md)  
-**Planning:** See `/Planning` folder for design documents
-
----
-
-**Last Updated:** January 20, 2026  
-**Version:** 1.1.0  
-**Branch:** feature/OflineMode
+*Last updated: January 23, 2026*

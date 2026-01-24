@@ -1,4 +1,6 @@
 const Room = require('../models/Room');
+const { getIO, getUserSocketId } = require('../sockets/socketManager');
+const User = require('../models/User');
 
 // Helper function to generate random 4-character room code
 const generateRoomCode = () => {
@@ -13,16 +15,8 @@ const generateRoomCode = () => {
 // Create a new match room
 exports.createMatch = async (req, res) => {
   try {
-    const { format = 3, difficulty = 'easy' } = req.body;
+    const { format = 3, digits = 4, difficulty = 'easy' } = req.body;
     const userId = req.user._id;
-
-    // Validate format
-    if (![1, 3, 5].includes(format)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid format. Must be 1, 3, or 5'
-      });
-    }
 
     // Generate unique room code
     let roomCode;
@@ -35,15 +29,15 @@ exports.createMatch = async (req, res) => {
     const room = new Room({
       roomCode,
       host: userId,
-      players: [userId],
-      playerCount: 1,
+      opponent: null,
       format,
+      digits,
       difficulty,
-      mode: 'online',
       status: 'waiting'
     });
 
     await room.save();
+
 
     res.status(201).json({
       success: true,
@@ -81,27 +75,26 @@ exports.joinMatch = async (req, res) => {
       });
     }
 
-    if (room.playerCount >= 2) {
+    if (room.opponent) {
       return res.status(400).json({
         success: false,
         message: 'Room is already full'
       });
     }
 
-    room.players.push(userId);
-    room.playerCount = room.players.length;
+    room.opponent = userId;
     room.status = 'active';
     await room.save();
 
     await room.populate('host', 'username');
-    await room.populate('players', 'username');
+    await room.populate('opponent', 'username');
 
     res.status(200).json({
       success: true,
       matchData: {
         roomCode: room.roomCode,
         host: room.host,
-        players: room.players,
+        opponent: room.opponent,
         format: room.format,
         digits: room.digits,
         difficulty: room.difficulty
@@ -138,21 +131,45 @@ exports.inviteToMatch = async (req, res) => {
       });
     }
 
-    if (room.playerCount >= 2) {
+    if (room.opponent) {
       return res.status(400).json({
         success: false,
         message: 'Room is already full'
       });
     }
 
-    // TODO: Implement WebSocket notification to friendId
-    // For now, just return success
-    // In future: Send real-time notification via Socket.IO
+    // Verify friend exists
+    const friend = await User.findById(friendId);
+    if (!friend) {
+      return res.status(404).json({
+        success: false,
+        message: 'Friend not found'
+      });
+    }
+
+    // Send real-time notification via Socket.IO
+    const io = getIO();
+    const friendSocketId = getUserSocketId(friendId);
+    
+    if (friendSocketId) {
+      // Friend is online, send invite notification
+      io.to(friendSocketId).emit('match-invite', {
+        roomCode: room.roomCode,
+        host: {
+          _id: userId,
+          username: req.user.username
+        },
+        format: room.format,
+        digits: room.digits,
+        difficulty: room.difficulty
+      });
+    }
 
     res.status(200).json({
       success: true,
-      message: 'Invite sent successfully',
-      roomCode: room.roomCode
+      message: friendSocketId ? 'Invite sent successfully' : 'Invite sent (friend offline)',
+      roomCode: room.roomCode,
+      friendOnline: !!friendSocketId
     });
   } catch (error) {
     res.status(500).json({
@@ -170,7 +187,7 @@ exports.getMatch = async (req, res) => {
 
     const room = await Room.findOne({ roomCode: roomCode.toUpperCase() })
       .populate('host', 'username')
-      .populate('players', 'username');
+      .populate('opponent', 'username');
 
     if (!room) {
       return res.status(404).json({

@@ -13,15 +13,10 @@ const roomSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  players: [{
+  opponent: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  playerCount: {
-    type: Number,
-    default: 2,
-    min: 2,
-    max: 2
+    ref: 'User',
+    default: null
   },
   status: {
     type: String,

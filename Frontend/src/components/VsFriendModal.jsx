@@ -18,21 +18,22 @@ function VsFriendModal({ onClose }) {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/match/create', {
+      const response = await fetch('http://localhost:5000/api/matches/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ format: 'bestOf3', difficulty: 'easy' })
+        body: JSON.stringify({ format: 3, digits: 4, difficulty: 'easy' })
       });
 
       const data = await response.json();
       if (data.success) {
-        setGeneratedCode(data.roomId);
+        setGeneratedCode(data.roomCode);
         setIsWaiting(true);
-        alert(`Room Code: ${data.roomId}\nShare this code with your friend!`);
+        // Navigate to waiting room
+        navigate(`/lobby/room/${data.roomCode}`);
+        onClose();
       } else {
         alert('Failed to create room: ' + data.message);
       }
@@ -55,19 +56,20 @@ function VsFriendModal({ onClose }) {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/match/join', {
+      const response = await fetch('http://localhost:5000/api/matches/join', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ roomId: joinCodeInput.toUpperCase() })
+        body: JSON.stringify({ roomCode: joinCodeInput.toUpperCase() })
       });
 
       const data = await response.json();
       if (data.success) {
-        alert('Joined room successfully!');
+        // Navigate to game
+        navigate(`/lobby/room/${joinCodeInput.toUpperCase()}`);
+        onClose();
       } else {
         alert('Failed to join room: ' + data.message);
       }
