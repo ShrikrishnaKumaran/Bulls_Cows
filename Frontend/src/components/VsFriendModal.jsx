@@ -18,7 +18,7 @@ function VsFriendModal({ onClose }) {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/matches/create', {
+      const response = await fetch('/api/matches/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ function VsFriendModal({ onClose }) {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/matches/join', {
+      const response = await fetch('/api/matches/join', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -2,10 +2,24 @@ import { create } from 'zustand';
 import { calculateBullsAndCows } from '../utils/gameRules';
 
 const useOfflineGameStore = create((set, get) => ({
-  // Game State
+  // ═══════════════════════════════════════════════════════════
+  // SETUP WIZARD STATE
+  // ═══════════════════════════════════════════════════════════
+  
+  setupStep: 1, // 1 = Config, 2 = P1 Secret, 3 = Handover, 4 = P2 Secret
+  config: {
+    digits: 4,        // 3 or 4
+    difficulty: 'Easy', // 'Easy' or 'Hard'
+    format: 1         // 1 = Single, 3 = Best of 3, 5 = Best of 5
+  },
+  
+  // ═══════════════════════════════════════════════════════════
+  // GAME STATE
+  // ═══════════════════════════════════════════════════════════
+  
   gamePhase: 'SETUP', // 'SETUP' | 'PLAYING' | 'GAME_OVER'
   turn: 'PLAYER_1', // 'PLAYER_1' | 'PLAYER_2'
-  digits: 4, // 3 or 4 digits game
+  digits: 4, // 3 or 4 digits game (kept for backward compatibility)
   
   // Player Secrets
   player1Secret: '',
@@ -18,7 +32,46 @@ const useOfflineGameStore = create((set, get) => ({
   // Game Results
   winner: null, // 'PLAYER_1' | 'PLAYER_2' | 'DRAW' | null
   
-  // Actions
+  // ═══════════════════════════════════════════════════════════
+  // SETUP WIZARD ACTIONS
+  // ═══════════════════════════════════════════════════════════
+  
+  /**
+   * Move to a specific setup step
+   */
+  setStep: (step) => set({ setupStep: step }),
+  
+  /**
+   * Update a config value (digits or difficulty)
+   */
+  setConfig: (key, value) => set((state) => ({
+    config: { ...state.config, [key]: value }
+  })),
+  
+  /**
+   * Set a player's secret (1 or 2)
+   */
+  setSecret: (player, code) => {
+    if (player === 1) {
+      set({ player1Secret: code });
+    } else {
+      set({ player2Secret: code });
+    }
+  },
+  
+  /**
+   * Reset the setup wizard to step 1
+   */
+  resetSetup: () => set({
+    setupStep: 1,
+    config: { digits: 4, difficulty: 'Easy', format: 1 },
+    player1Secret: '',
+    player2Secret: ''
+  }),
+  
+  // ═══════════════════════════════════════════════════════════
+  // GAME ACTIONS (Existing)
+  // ═══════════════════════════════════════════════════════════
   
   /**
    * Set game configuration
@@ -139,6 +192,18 @@ const useOfflineGameStore = create((set, get) => ({
       
       return { success: true, result, isWin: false };
     }
+  },
+  
+  /**
+   * Skip turn (when timer runs out in Hard mode)
+   */
+  skipTurn: () => {
+    const { turn, gamePhase } = get();
+    if (gamePhase !== 'PLAYING') return;
+    
+    set({
+      turn: turn === 'PLAYER_1' ? 'PLAYER_2' : 'PLAYER_1'
+    });
   },
   
   /**

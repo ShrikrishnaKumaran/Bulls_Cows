@@ -1,143 +1,147 @@
-import { useState, useEffect } from 'react';
+/**
+ * OfflineGame - Offline Game Logic Container
+ * 
+ * Connects the GameArena to the Offline (Pass & Play) store.
+ * Handles turn switching, timer (Hard mode), and game flow.
+ */
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useOfflineGameStore from '../store/useOfflineGameStore';
+import GameArena from './game/GameArena';
 
 function OfflineGame() {
   const navigate = useNavigate();
+  
+  // Store state
   const {
     gamePhase,
     turn,
     digits,
+    config,
     player1Guesses,
     player2Guesses,
     winner,
     submitGuess,
+    skipTurn,
     resetGame,
-    playAgain
+    resetSetup
   } = useOfflineGameStore();
 
-  const [currentGuess, setCurrentGuess] = useState('');
-  const [error, setError] = useState('');
+  // Timer state (for Hard mode)
+  const MAX_TIME = 30;
+  const [timer, setTimer] = useState(MAX_TIME);
 
+  // Redirect to setup if not playing
   useEffect(() => {
     if (gamePhase !== 'PLAYING' && gamePhase !== 'GAME_OVER') {
       navigate('/offline/setup');
     }
   }, [gamePhase, navigate]);
 
-  const handleDigitClick = (digit) => {
-    if (currentGuess.length < digits && !currentGuess.includes(digit)) {
-      setCurrentGuess(currentGuess + digit);
-      setError('');
-    }
-  };
-
-  const handleBackspace = () => {
-    setCurrentGuess(currentGuess.slice(0, -1));
-    setError('');
-  };
-
-  const handleSubmitGuess = () => {
-    if (currentGuess.length !== digits) {
-      setError(`Please enter exactly ${digits} digits`);
-      return;
-    }
-
-    const result = submitGuess(currentGuess);
+  // Timer logic for Hard mode
+  useEffect(() => {
+    if (config.difficulty !== 'Hard' || gamePhase !== 'PLAYING') return;
     
-    if (!result.success) {
-      setError(result.error);
-      return;
-    }
+    const interval = setInterval(() => {
+      setTimer(prev => {
+        if (prev <= 1) {
+          // Time's up! Skip to next player's turn
+          skipTurn();
+          return MAX_TIME;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [config.difficulty, gamePhase, turn, skipTurn]);
 
-    setCurrentGuess('');
-    setError('');
-  };
+  // Reset timer when turn changes
+  useEffect(() => {
+    setTimer(MAX_TIME);
+  }, [turn]);
 
-  const handlePlayAgain = () => {
-    playAgain();
+  // Handle guess submission
+  const handleGuess = useCallback((guess) => {
+    submitGuess(guess);
+  }, [submitGuess]);
+
+  // Handle play again
+  const handlePlayAgain = useCallback(() => {
+    resetSetup();
     navigate('/offline/setup');
-  };
+  }, [resetSetup, navigate]);
 
-  const handleQuit = () => {
+  // Handle quit
+  const handleQuit = useCallback(() => {
     resetGame();
-    navigate('/home');
-  };
+    navigate('/');
+  }, [resetGame, navigate]);
 
-  if (gamePhase === 'GAME_OVER') {
-    return (
-      <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
-        <h2>🎉 {winner === 'PLAYER_1' ? 'Player 1' : 'Player 2'} Wins!</h2>
-        <p>Player 1: {player1Guesses.length} attempts</p>
-        <p>Player 2: {player2Guesses.length} attempts</p>
-        <button onClick={handlePlayAgain} style={{ padding: '10px 20px', margin: '5px' }}>Play Again</button>
-        <button onClick={handleQuit} style={{ padding: '10px 20px', margin: '5px' }}>Quit</button>
-      </div>
-    );
-  }
+  // ─── MAP STORE TO ARENA PROPS ───
+
+  // Determine whose turn it is (for Pass & Play, alternate between players)
+  const isPlayer1Turn = turn === 'PLAYER_1';
+  
+  // Pass turn info to arena - 'me' means Player 1's turn, 'opponent' means Player 2's turn
+  const currentTurn = isPlayer1Turn ? 'me' : 'opponent';
+  
+  // Combine logs with player info - FIXED positions (P1 = 'me', P2 = 'opponent')
+  // Player 1's guesses always marked as 'me', Player 2's always as 'opponent'
+  const logs = [
+    ...player1Guesses.map(g => ({
+      player: 'me', // Player 1's guesses always on left
+      guess: g.guess,
+      bulls: g.bulls,
+      cows: g.cows,
+      timestamp: `#${g.attempt}`
+    })),
+    ...player2Guesses.map(g => ({
+      player: 'opponent', // Player 2's guesses always on right
+      guess: g.guess,
+      bulls: g.bulls,
+      cows: g.cows,
+      timestamp: `#${g.attempt}`
+    }))
+  ].sort((a, b) => {
+    // Sort by attempt number
+    const aNum = parseInt(a.timestamp.slice(1));
+    const bNum = parseInt(b.timestamp.slice(1));
+    return aNum - bNum;
+  });
+
+  // Config for display
+  const formatLabel = config.format === 1 ? 'Single' : `Best of ${config.format}`;
+  
+  // Calculate attempts for each player - FIXED (P1 left, P2 right)
+  const myAttempts = player1Guesses.length;
+  const opponentAttempts = player2Guesses.length;
+  
+  // Determine winner mapping
+  const arenaWinner = winner;
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <h2>Pass & Play</h2>
-      <h3>{turn === 'PLAYER_1' ? 'Player 1' : 'Player 2'}'s Turn</h3>
-
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-
-      <div style={{ fontSize: '32px', margin: '20px 0' }}>
-        {currentGuess || '_'.repeat(digits)}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', maxWidth: '300px' }}>
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(digit => (
-          <button
-            key={digit}
-            onClick={() => handleDigitClick(digit.toString())}
-            disabled={currentGuess.includes(digit.toString()) || currentGuess.length >= digits}
-            style={{ padding: '15px', fontSize: '20px' }}
-          >
-            {digit}
-          </button>
-        ))}
-        
-        <button onClick={handleBackspace} disabled={currentGuess.length === 0} style={{ padding: '15px' }}>
-          ⌫
-        </button>
-
-        <button
-          onClick={handleSubmitGuess}
-          disabled={currentGuess.length !== digits}
-          style={{ gridColumn: 'span 2', padding: '15px', background: currentGuess.length === digits ? '#007bff' : '#ccc', color: 'white' }}
-        >
-          Submit
-        </button>
-      </div>
-
-      <div style={{ display: 'flex', gap: '20px', marginTop: '30px' }}>
-        <div style={{ flex: 1 }}>
-          <h4>Player 1</h4>
-          {player1Guesses.length === 0 ? <p>No guesses</p> : (
-            player1Guesses.map((g, i) => (
-              <div key={i} style={{ padding: '5px', background: '#f5f5f5', margin: '5px 0' }}>
-                {g.guess} - 🐂{g.bulls} 🐄{g.cows} 💩{g.shit}
-              </div>
-            ))
-          )}
-        </div>
-
-        <div style={{ flex: 1 }}>
-          <h4>Player 2</h4>
-          {player2Guesses.length === 0 ? <p>No guesses</p> : (
-            player2Guesses.map((g, i) => (
-              <div key={i} style={{ padding: '5px', background: '#f5f5f5', margin: '5px 0' }}>
-                {g.guess} - 🐂{g.bulls} 🐄{g.cows} 💩{g.shit}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      <button onClick={handleQuit} style={{ marginTop: '20px', padding: '10px 20px' }}>Quit</button>
-    </div>
+    <GameArena
+      turn={currentTurn}
+      difficulty={config.difficulty}
+      config={{
+        format: formatLabel,
+        score: `${player1Guesses.length}-${player2Guesses.length}`
+      }}
+      logs={logs}
+      onGuess={handleGuess}
+      timer={timer}
+      maxTime={MAX_TIME}
+      digits={digits}
+      isGameOver={gamePhase === 'GAME_OVER'}
+      winner={winner}
+      myName="PLAYER 1"
+      opponentName="PLAYER 2"
+      myAttempts={myAttempts}
+      opponentAttempts={opponentAttempts}
+      onPlayAgain={handlePlayAgain}
+      onQuit={handleQuit}
+    />
   );
 }
 

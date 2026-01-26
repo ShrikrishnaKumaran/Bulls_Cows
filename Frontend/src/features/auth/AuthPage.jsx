@@ -10,7 +10,7 @@ import {
 import useToastStore from '../../store/useToastStore';
 
 // API Base URL - Update this if your backend runs on a different port
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 export default function AuthPage() {
   const navigate = useNavigate();
