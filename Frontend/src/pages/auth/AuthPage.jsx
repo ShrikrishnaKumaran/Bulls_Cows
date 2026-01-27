@@ -1,3 +1,12 @@
+/**
+ * AuthPage - Login/Register Page
+ * 
+ * Handles user authentication with:
+ * - Email/password login
+ * - User registration
+ * - Form validation
+ * - Error handling
+ */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -9,7 +18,6 @@ import {
 } from './AuthComponents';
 import useToastStore from '../../store/useToastStore';
 
-// API Base URL - Update this if your backend runs on a different port
 const API_URL = '/api';
 
 export default function AuthPage() {
@@ -33,7 +41,6 @@ export default function AuthPage() {
 
   const handleInputChange = (field) => (e) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
-    // Clear field error when user starts typing
     if (fieldErrors[field]) {
       setFieldErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -43,7 +50,6 @@ export default function AuthPage() {
     const errors = {};
     let isValid = true;
 
-    // Username validation (Register only)
     if (activeTab === 'register') {
       if (!formData.username.trim()) {
         errors.username = 'Username is required';
@@ -54,7 +60,6 @@ export default function AuthPage() {
       }
     }
 
-    // Email validation
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
       isValid = false;
@@ -63,7 +68,6 @@ export default function AuthPage() {
       isValid = false;
     }
 
-    // Password validation
     if (!formData.password) {
       errors.password = 'Password is required';
       isValid = false;
@@ -72,7 +76,6 @@ export default function AuthPage() {
       isValid = false;
     }
 
-    // Confirm password validation (Register only)
     if (activeTab === 'register') {
       if (!formData.confirmPassword) {
         errors.confirmPassword = 'Please confirm your password';
@@ -90,7 +93,6 @@ export default function AuthPage() {
   const handleAuth = async (e) => {
     e.preventDefault();
 
-    // Validate form before submission
     if (!validateForm()) {
       addToast('Please fix the errors above', 'error');
       return;
@@ -102,13 +104,11 @@ export default function AuthPage() {
       let response;
 
       if (activeTab === 'login') {
-        // LOGIN REQUEST
         response = await axios.post(`${API_URL}/auth/login`, {
           email: formData.email,
           password: formData.password,
         });
       } else {
-        // REGISTER REQUEST
         response = await axios.post(`${API_URL}/auth/register`, {
           username: formData.username,
           email: formData.email,
@@ -116,19 +116,16 @@ export default function AuthPage() {
         });
       }
 
-      // Success! Save token and redirect
       const { token } = response.data;
       localStorage.setItem('token', token);
 
       addToast('Welcome to the Arena! 🎮', 'success');
 
-      // Small delay to show the success toast
       setTimeout(() => {
         navigate('/home');
       }, 500);
 
     } catch (err) {
-      // Extract error message from backend response
       const errorMessage = err.response?.data?.message 
         || err.response?.data?.error 
         || err.message 
@@ -136,7 +133,6 @@ export default function AuthPage() {
 
       addToast(errorMessage, 'error');
 
-      // Highlight the relevant field if we can determine which one failed
       if (errorMessage.toLowerCase().includes('email')) {
         setFieldErrors(prev => ({ ...prev, email: errorMessage }));
       } else if (errorMessage.toLowerCase().includes('password')) {
@@ -183,14 +179,11 @@ export default function AuthPage() {
 
         {/* Auth Card */}
         <div className="bg-surface-dark/80 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 md:p-8 shadow-xl">
-          {/* Tab Switcher */}
           <div className="mb-8">
             <TabSwitcher activeTab={activeTab} onTabChange={handleTabChange} />
           </div>
 
-          {/* Auth Form */}
           <form onSubmit={handleAuth} className="space-y-5">
-            {/* Username (Register Only) */}
             {activeTab === 'register' && (
               <AuthInput
                 label="Username"
@@ -203,7 +196,6 @@ export default function AuthPage() {
               />
             )}
 
-            {/* Email */}
             <AuthInput
               label="Email"
               type="email"
@@ -214,7 +206,6 @@ export default function AuthPage() {
               error={fieldErrors.email}
             />
 
-            {/* Password */}
             <AuthInput
               label="Password"
               type="password"
@@ -225,7 +216,6 @@ export default function AuthPage() {
               error={fieldErrors.password}
             />
 
-            {/* Confirm Password (Register Only) */}
             {activeTab === 'register' && (
               <AuthInput
                 label="Confirm Password"
@@ -238,7 +228,6 @@ export default function AuthPage() {
               />
             )}
 
-            {/* Forgot Password Link (Login Only) */}
             {activeTab === 'login' && (
               <div className="text-right">
                 <button
@@ -250,7 +239,6 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* Submit Button */}
             <div className="pt-2">
               <PrimaryButton type="submit" loading={loading}>
                 {activeTab === 'login' ? '🎮 ENTER ARENA' : '🚀 CREATE ACCOUNT'}
@@ -258,7 +246,6 @@ export default function AuthPage() {
             </div>
           </form>
 
-          {/* Terms Text */}
           <p className="mt-6 text-xs text-slate-500 text-center">
             By continuing, you agree to our{' '}
             <a href="#" className="text-primary hover:underline">Terms of Service</a>
@@ -267,10 +254,8 @@ export default function AuthPage() {
           </p>
         </div>
 
-        {/* Tech Footer */}
         <TechFooter />
 
-        {/* Version Info */}
         <div className="mt-4 text-center">
           <span className="text-xs text-slate-600">v1.0.0 • Built with ⚡</span>
         </div>

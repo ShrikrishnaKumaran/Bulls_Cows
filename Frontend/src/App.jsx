@@ -1,13 +1,25 @@
 ﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import Home from './components/Home'
-import AuthPage from './features/auth/AuthPage'
-import CreateRoom from './features/lobby/CreateRoom'
-import JoinRoom from './features/lobby/JoinRoom'
-import RoomWaiting from './features/lobby/RoomWaiting'
-import UserProfile from './features/profile/UserProfile'
-import PassAndPlaySetup from './components/PassAndPlaySetup'
-import OfflineGame from './components/OfflineGame'
-import OnlineGame from './features/game/OnlineGame'
+
+// Pages - Auth
+import AuthPage from './pages/auth/AuthPage'
+
+// Pages - Home
+import HomePage from './pages/home/HomePage'
+
+// Pages - Profile
+import ProfilePage from './pages/profile/ProfilePage'
+
+// Pages - Offline
+import SetupPage from './pages/offline/SetupPage'
+import OfflineGamePage from './pages/offline/GamePage'
+
+// Pages - Online Lobby
+import CreateRoomPage from './pages/online/CreateRoomPage'
+import JoinRoomPage from './pages/online/JoinRoomPage'
+import RoomWaitingPage from './pages/online/RoomWaitingPage'
+import OnlineGamePage from './pages/online/GamePage'
+
+// UI Components
 import ToastContainer from './components/ui/ToastContainer'
 
 // Protected Route Component
@@ -29,17 +41,17 @@ function App() {
       
       <Routes>
         <Route path="/" element={<Navigate to="/auth" replace />} />
-        <Route path="/auth" element={<AuthPage />} />
         <Route path="/login" element={<Navigate to="/auth" replace />} />
         <Route path="/register" element={<Navigate to="/auth" replace />} />
-        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-        <Route path="/offline/setup" element={<PassAndPlaySetup />} />
-        <Route path="/offline/game" element={<OfflineGame />} />
-        <Route path="/lobby/create" element={<ProtectedRoute><CreateRoom /></ProtectedRoute>} />
-        <Route path="/lobby/join" element={<ProtectedRoute><JoinRoom /></ProtectedRoute>} />
-        <Route path="/lobby/room/:roomCode" element={<ProtectedRoute><RoomWaiting /></ProtectedRoute>} />
-        <Route path="/game/online/:roomCode" element={<ProtectedRoute><OnlineGame /></ProtectedRoute>} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/offline/setup" element={<SetupPage />} />
+        <Route path="/offline/game" element={<OfflineGamePage />} />
+        <Route path="/lobby/create" element={<ProtectedRoute><CreateRoomPage /></ProtectedRoute>} />
+        <Route path="/lobby/join" element={<ProtectedRoute><JoinRoomPage /></ProtectedRoute>} />
+        <Route path="/lobby/room/:roomCode" element={<ProtectedRoute><RoomWaitingPage /></ProtectedRoute>} />
+        <Route path="/game/online/:roomCode" element={<ProtectedRoute><OnlineGamePage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   )

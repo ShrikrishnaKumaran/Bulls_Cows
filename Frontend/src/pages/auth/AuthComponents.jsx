@@ -1,15 +1,10 @@
+/**
+ * Auth Components - Reusable authentication UI elements
+ */
 import { useState } from 'react';
 
 /**
  * AuthInput - Dark themed input with icon support and error handling
- * @param {Object} props
- * @param {string} props.label - Uppercase label text
- * @param {string} props.type - Input type (text, password, email)
- * @param {string} props.placeholder - Placeholder text
- * @param {React.ReactNode|string} props.icon - Icon element or emoji
- * @param {string} props.value - Input value
- * @param {function} props.onChange - Change handler
- * @param {boolean|string} props.error - Error state (boolean or error message)
  */
 export function AuthInput({ label, type = 'text', placeholder, icon, value, onChange, error = false, ...props }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -23,7 +18,6 @@ export function AuthInput({ label, type = 'text', placeholder, icon, value, onCh
         {label}
       </label>
       <div className="relative">
-        {/* Left Icon */}
         {icon && (
           <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-lg ${hasError ? 'text-red-500' : 'text-slate-400'}`}>
             {icon}
@@ -49,7 +43,6 @@ export function AuthInput({ label, type = 'text', placeholder, icon, value, onCh
           {...props}
         />
 
-        {/* Password Toggle */}
         {isPassword && (
           <button
             type="button"
@@ -60,7 +53,6 @@ export function AuthInput({ label, type = 'text', placeholder, icon, value, onCh
           </button>
         )}
       </div>
-      {/* Error Message */}
       {typeof error === 'string' && error && (
         <p className="mt-1 text-xs text-red-500">{error}</p>
       )}
@@ -70,11 +62,6 @@ export function AuthInput({ label, type = 'text', placeholder, icon, value, onCh
 
 /**
  * PrimaryButton - Neon yellow action button
- * @param {Object} props
- * @param {React.ReactNode} props.children - Button content
- * @param {function} props.onClick - Click handler
- * @param {boolean} props.disabled - Disabled state
- * @param {boolean} props.loading - Loading state
  */
 export function PrimaryButton({ children, onClick, disabled = false, loading = false, ...props }) {
   return (
@@ -105,38 +92,11 @@ export function PrimaryButton({ children, onClick, disabled = false, loading = f
 }
 
 /**
- * SecondaryButton - Outlined variant button
- */
-export function SecondaryButton({ children, onClick, disabled = false, ...props }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`
-        w-full border-2 border-primary text-primary font-bold py-3 px-6 rounded-lg
-        uppercase tracking-wider text-sm
-        hover:bg-primary hover:text-primary-content
-        transform hover:scale-[1.02] active:scale-[0.98]
-        transition-all duration-200
-        disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-      `}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
-
-/**
  * TabSwitcher - Pill-shaped toggle for Login/Register
- * @param {Object} props
- * @param {'login'|'register'} props.activeTab - Currently active tab
- * @param {function} props.onTabChange - Tab change handler
  */
 export function TabSwitcher({ activeTab, onTabChange }) {
   return (
     <div className="relative flex bg-surface-dark rounded-full p-1 w-full max-w-xs mx-auto">
-      {/* Sliding Background */}
       <div
         className={`
           absolute top-1 bottom-1 w-[calc(50%-4px)] bg-primary rounded-full
@@ -145,7 +105,6 @@ export function TabSwitcher({ activeTab, onTabChange }) {
         `}
       />
       
-      {/* Login Tab */}
       <button
         onClick={() => onTabChange('login')}
         className={`
@@ -157,7 +116,6 @@ export function TabSwitcher({ activeTab, onTabChange }) {
         Login
       </button>
       
-      {/* Register Tab */}
       <button
         onClick={() => onTabChange('register')}
         className={`
@@ -168,19 +126,6 @@ export function TabSwitcher({ activeTab, onTabChange }) {
       >
         Register
       </button>
-    </div>
-  );
-}
-
-/**
- * Divider - "OR" divider line
- */
-export function Divider({ text = 'OR' }) {
-  return (
-    <div className="flex items-center gap-4 my-6">
-      <div className="flex-1 h-px bg-slate-700" />
-      <span className="text-xs text-slate-500 uppercase tracking-wider">{text}</span>
-      <div className="flex-1 h-px bg-slate-700" />
     </div>
   );
 }

@@ -1,17 +1,17 @@
 /**
- * OfflineGame - Offline Game Logic Container
+ * OfflineGamePage - Offline Game Logic Container
  * 
  * Connects the GameArena to the Offline (Pass & Play) store.
  * Handles turn switching, timer (Hard mode), and game flow.
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useOfflineGameStore from '../store/useOfflineGameStore';
-import GameArena from './game/GameArena';
+import useOfflineGameStore from '../../store/useOfflineGameStore';
+import GameArena from '../../components/game/GameArena';
 
-function OfflineGame() {
+function OfflineGamePage() {
   const navigate = useNavigate();
-  
+
   // Store state
   const {
     gamePhase,
@@ -30,6 +30,7 @@ function OfflineGame() {
   // Timer state (for Hard mode)
   const MAX_TIME = 30;
   const [timer, setTimer] = useState(MAX_TIME);
+  const timerExpiredRef = useRef(false);
 
   // Redirect to setup if not playing
   useEffect(() => {
@@ -41,20 +42,29 @@ function OfflineGame() {
   // Timer logic for Hard mode
   useEffect(() => {
     if (config.difficulty !== 'Hard' || gamePhase !== 'PLAYING') return;
-    
+
+    timerExpiredRef.current = false;
+
     const interval = setInterval(() => {
       setTimer(prev => {
         if (prev <= 1) {
-          // Time's up! Skip to next player's turn
-          skipTurn();
-          return MAX_TIME;
+          timerExpiredRef.current = true;
+          return 0;
         }
         return prev - 1;
       });
     }, 1000);
-    
+
     return () => clearInterval(interval);
-  }, [config.difficulty, gamePhase, turn, skipTurn]);
+  }, [config.difficulty, gamePhase, turn]);
+
+  // Handle timer expiration
+  useEffect(() => {
+    if (timer === 0 && timerExpiredRef.current && gamePhase === 'PLAYING') {
+      timerExpiredRef.current = false;
+      skipTurn();
+    }
+  }, [timer, gamePhase, skipTurn]);
 
   // Reset timer when turn changes
   useEffect(() => {
@@ -75,50 +85,38 @@ function OfflineGame() {
   // Handle quit
   const handleQuit = useCallback(() => {
     resetGame();
-    navigate('/');
+    navigate('/home');
   }, [resetGame, navigate]);
 
   // ─── MAP STORE TO ARENA PROPS ───
-
-  // Determine whose turn it is (for Pass & Play, alternate between players)
   const isPlayer1Turn = turn === 'PLAYER_1';
-  
-  // Pass turn info to arena - 'me' means Player 1's turn, 'opponent' means Player 2's turn
   const currentTurn = isPlayer1Turn ? 'me' : 'opponent';
-  
-  // Combine logs with player info - FIXED positions (P1 = 'me', P2 = 'opponent')
-  // Player 1's guesses always marked as 'me', Player 2's always as 'opponent'
+
+  // Combine logs with player info
   const logs = [
     ...player1Guesses.map(g => ({
-      player: 'me', // Player 1's guesses always on left
+      player: 'me',
       guess: g.guess,
       bulls: g.bulls,
       cows: g.cows,
       timestamp: `#${g.attempt}`
     })),
     ...player2Guesses.map(g => ({
-      player: 'opponent', // Player 2's guesses always on right
+      player: 'opponent',
       guess: g.guess,
       bulls: g.bulls,
       cows: g.cows,
       timestamp: `#${g.attempt}`
     }))
   ].sort((a, b) => {
-    // Sort by attempt number
     const aNum = parseInt(a.timestamp.slice(1));
     const bNum = parseInt(b.timestamp.slice(1));
     return aNum - bNum;
   });
 
-  // Config for display
   const formatLabel = config.format === 1 ? 'Single' : `Best of ${config.format}`;
-  
-  // Calculate attempts for each player - FIXED (P1 left, P2 right)
   const myAttempts = player1Guesses.length;
   const opponentAttempts = player2Guesses.length;
-  
-  // Determine winner mapping
-  const arenaWinner = winner;
 
   return (
     <GameArena
@@ -145,4 +143,4 @@ function OfflineGame() {
   );
 }
 
-export default OfflineGame;
+export default OfflineGamePage;

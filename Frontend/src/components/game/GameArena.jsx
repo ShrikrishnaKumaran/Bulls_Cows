@@ -77,11 +77,11 @@ const XIcon = ({ className }) => (
 
 const MatchInfoPill = ({ score, format, difficulty }) => (
   <div className="flex justify-center mb-4">
-    <div className="bg-[#1f2937] border border-white/10 rounded-full px-4 py-2 text-xs font-bold tracking-wider text-slate-300 flex items-center gap-2">
+    <div className="bg-surface-dark/80 backdrop-blur-sm border border-slate-700/50 rounded-full px-4 py-2 text-xs font-bold tracking-wider text-slate-300 flex items-center gap-2 shadow-lg shadow-black/30">
       <span>MATCH: {score}</span>
-      <span className="text-slate-500">|</span>
+      <span className="text-slate-600">|</span>
       <span>{format}</span>
-      <span className="text-slate-500">|</span>
+      <span className="text-slate-600">|</span>
       <span className="text-primary">{difficulty.toUpperCase()}</span>
     </div>
   </div>
@@ -93,30 +93,32 @@ const MatchInfoPill = ({ score, format, difficulty }) => (
 
 const PlayerCard = ({ name, isMe, isActive, attempts }) => {
   const Icon = isMe ? UserIcon : UsersIcon;
-  
+
   // Player 1 (isMe) = Yellow, Player 2 (!isMe) = Blue
-  const activeColor = isMe ? 'border-primary shadow-[0_0_20px_rgba(250,204,20,0.4)]' : 'border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.4)]';
+  const activeColor = isMe
+    ? 'border-primary shadow-neon'
+    : 'border-blue-500 shadow-[0_0_25px_rgba(59,130,246,0.5)]';
   const accentBg = isMe ? 'bg-primary/20' : 'bg-blue-500/20';
   const accentText = isMe ? 'text-primary' : 'text-blue-400';
   const turnBadgeBg = isMe ? 'bg-primary text-black' : 'bg-blue-500 text-white';
-  
+
   return (
-    <div 
+    <div
       className={`
-        relative flex-1 bg-[#1f2937] rounded-2xl p-4 border-2 transition-all duration-300
-        ${isActive 
-          ? activeColor 
-          : 'border-slate-700/50 opacity-70'
+        relative flex-1 bg-surface-dark/80 backdrop-blur-sm rounded-2xl p-4 border-2 transition-all duration-300
+        ${isActive
+          ? activeColor
+          : 'border-slate-700/50 opacity-70 shadow-lg shadow-black/20'
         }
       `}
     >
       {/* TURN Badge */}
       {isActive && (
-        <div className={`absolute -top-3 left-1/2 -translate-x-1/2 ${turnBadgeBg} text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider`}>
+        <div className={`absolute -top-3 left-1/2 -translate-x-1/2 ${turnBadgeBg} text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-lg`}>
           Turn
         </div>
       )}
-      
+
       {/* Card Content */}
       <div className="flex items-start justify-between">
         {/* Left: Icon + Name + Attempts */}
@@ -136,12 +138,12 @@ const PlayerCard = ({ name, isMe, isActive, attempts }) => {
             </p>
           </div>
         </div>
-        
+
         {/* Right: Badge */}
         <span className={`
           text-[10px] font-bold px-2 py-0.5 rounded-full uppercase
-          ${isMe 
-            ? 'bg-primary/20 text-primary' 
+          ${isMe
+            ? 'bg-primary/20 text-primary'
             : 'bg-blue-500/20 text-blue-400'
           }
         `}>
@@ -158,7 +160,7 @@ const PlayerCard = ({ name, isMe, isActive, attempts }) => {
 
 const TimerBar = ({ timer, maxTime = 30 }) => {
   const percentage = (timer / maxTime) * 100;
-  
+
   return (
     <div className="mb-6">
       {/* Labels */}
@@ -167,16 +169,16 @@ const TimerBar = ({ timer, maxTime = 30 }) => {
         <div className="flex items-center gap-1">
           <TimerIcon className={`w-4 h-4 ${timer <= 10 ? 'text-red-400' : 'text-primary'}`} />
           <span className={`font-mono font-bold ${timer <= 10 ? 'text-red-400' : 'text-white'}`}>
-            {timer.toFixed(1)}s
+            {timer.toFixed(1)}
           </span>
           <span className="text-slate-500 text-sm">/ {maxTime}.0s</span>
         </div>
       </div>
-      
+
       {/* Bar */}
-      <div className="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-gradient-to-r from-green-500 via-yellow-400 to-orange-500 transition-all duration-1000 ease-linear rounded-full"
+      <div className="w-full h-2.5 bg-slate-700/80 rounded-full overflow-hidden shadow-inner">
+        <div
+          className="h-full bg-gradient-to-r from-green-500 via-yellow-400 to-orange-500 transition-all duration-1000 ease-linear rounded-full shadow-lg"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -189,80 +191,90 @@ const TimerBar = ({ timer, maxTime = 30 }) => {
 // ═══════════════════════════════════════════════════════════
 
 const LogCard = ({ log, digits, turnNumber }) => {
-  // Player 1 guesses appear on LEFT, Player 2 guesses appear on RIGHT
-  // 'me' = Player 1 (left card) = left side logs
-  // 'opponent' = Player 2 (right card) = right side logs
   const isPlayer1 = log.player === 'me';
   const guessDigits = log.guess.split('');
   const misses = digits - log.bulls - log.cows;
-  
-  // Generate result emojis: 🐂 Bull, 🐮 Cow, ❌ Miss
-  const resultEmojis = [];
-  for (let i = 0; i < log.bulls; i++) resultEmojis.push('🐂');
-  for (let i = 0; i < log.cows; i++) resultEmojis.push('🐮');
-  for (let i = 0; i < misses; i++) resultEmojis.push('❌');
-  
+
+  // Generate result items with type for styling (using ❌🐂🐮 emojis)
+  const resultItems = [];
+  for (let i = 0; i < log.bulls; i++) resultItems.push({ emoji: '🐂', type: 'bull' });
+  for (let i = 0; i < log.cows; i++) resultItems.push({ emoji: '🐮', type: 'cow' });
+  for (let i = 0; i < misses; i++) resultItems.push({ emoji: '❌', type: 'miss' });
+
   return (
-    <div 
+    <div
       className={`
-        w-[85%] relative
+        w-[88%] relative
         ${isPlayer1 ? 'mr-auto' : 'ml-auto'}
       `}
     >
-      {/* Turn Number Badge */}
+      {/* Turn Number Badge - Enhanced */}
       {turnNumber && (
-        <span 
+        <span
           className={`
-            absolute -top-1 text-[10px] font-mono text-slate-500
-            ${isPlayer1 ? 'left-2' : 'right-2'}
+            absolute -top-2 px-2 py-0.5 text-[10px] font-bold font-mono rounded-full z-10
+            ${isPlayer1
+              ? 'left-3 bg-primary/30 text-primary border border-primary/40'
+              : 'right-3 bg-blue-500/30 text-blue-300 border border-blue-500/40'
+            }
           `}
         >
           #{String(turnNumber).padStart(2, '0')}
         </span>
       )}
-      
-      {/* Chat Bubble Card */}
-      <div 
+
+      {/* Enhanced Chat Bubble Card */}
+      <div
         className={`
-          p-3 mt-2 transition-all
-          ${isPlayer1 
-            ? 'bg-primary/5 border-l-2 border-primary rounded-r-xl rounded-tl-xl' 
-            : 'bg-blue-500/5 border-r-2 border-blue-500 rounded-l-xl rounded-tr-xl'
+          p-4 mt-3 transition-all backdrop-blur-md rounded-2xl
+          shadow-xl hover:shadow-2xl transform hover:scale-[1.01] transition-all duration-200
+          ${isPlayer1
+            ? 'bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border-l-[3px] border-primary rounded-tl-sm shadow-primary/15'
+            : 'bg-gradient-to-bl from-blue-500/20 via-blue-500/10 to-transparent border-r-[3px] border-blue-500 rounded-tr-sm shadow-blue-500/15'
           }
         `}
       >
-        {/* Row 1: Guess Digits (Hero) */}
-        <div 
+        {/* Row 1: Guess Digits in Pill Boxes */}
+        <div
           className={`
-            flex items-center mb-2
+            flex items-center mb-3
             ${isPlayer1 ? 'justify-start' : 'justify-end'}
           `}
         >
-          <div className="flex" style={{ gap: '0.5em', letterSpacing: '0.15em' }}>
+          <div className="flex gap-2">
             {guessDigits.map((digit, i) => (
-              <span 
-                key={i} 
-                className="text-xl font-bold font-mono text-white"
+              <span
+                key={i}
+                className={`
+                  w-9 h-9 flex items-center justify-center
+                  text-xl font-bold font-mono rounded-lg shadow-inner
+                  ${isPlayer1
+                    ? 'bg-primary/20 text-primary border border-primary/30'
+                    : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                  }
+                `}
               >
                 {digit}
               </span>
             ))}
           </div>
         </div>
-        
-        {/* Row 2: Result Emojis */}
-        <div 
+
+        {/* Row 2: Result Icons */}
+        <div
           className={`
-            flex items-center
+            flex items-center gap-1.5
             ${isPlayer1 ? 'justify-start' : 'justify-end'}
           `}
         >
-          {/* Emoji Icons */}
-          <div className="flex items-center" style={{ gap: '0.25em' }}>
-            {resultEmojis.map((emoji, i) => (
-              <span key={i} className="text-lg">{emoji}</span>
-            ))}
-          </div>
+          {resultItems.map((item, i) => (
+            <span
+              key={i}
+              className="text-lg"
+            >
+              {item.emoji}
+            </span>
+          ))}
         </div>
       </div>
     </div>
@@ -275,12 +287,12 @@ const LogCard = ({ log, digits, turnNumber }) => {
 
 const InputDrawer = ({ value, digits, onChange, onSubmit, disabled }) => {
   return (
-    <div 
-      className="bg-[#0d1117]/90 backdrop-blur-xl border-t border-white/10 rounded-t-xl flex flex-col"
-      style={{ padding: '2% 4%' }}
+    <div
+      className="bg-surface-dark/90 backdrop-blur-xl border-t border-slate-700/50 rounded-t-2xl flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)]"
+      style={{ padding: '3% 4%' }}
     >
       {/* Holo-Sphere Input */}
-      <div style={{ marginBottom: '2%' }}>
+      <div style={{ marginBottom: '3%' }}>
         <HoloSphereInput
           length={digits}
           value={value}
@@ -288,20 +300,21 @@ const InputDrawer = ({ value, digits, onChange, onSubmit, disabled }) => {
           disabled={disabled}
         />
       </div>
-      
+
       {/* Submit Button */}
       <button
         onClick={onSubmit}
         disabled={disabled}
         className={`
-          w-full rounded-full font-bold
-          flex items-center justify-center transition-all active:scale-[0.98]
+          w-full rounded-full font-bold uppercase tracking-wider
+          flex items-center justify-center transition-all 
+          transform hover:scale-[1.02] active:scale-[0.98]
           ${disabled
-            ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-            : 'bg-primary hover:bg-yellow-400 text-black shadow-neon'
+            ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-lg shadow-black/30'
+            : 'bg-primary hover:bg-yellow-400 text-black shadow-neon hover:shadow-neon-strong'
           }
         `}
-        style={{ padding: '2% 0', fontSize: 'clamp(0.75rem, 3vw, 0.875rem)', gap: '2%' }}
+        style={{ padding: '3% 0', fontSize: 'clamp(0.75rem, 3vw, 0.875rem)', gap: '2%' }}
       >
         Submit Guess <span style={{ fontSize: 'clamp(0.875rem, 3.5vw, 1rem)' }}>🎯</span>
       </button>
@@ -334,26 +347,26 @@ function GameArena({
   const [currentGuess, setCurrentGuess] = useState('0'.repeat(digits));
   const [error, setError] = useState('');
   const logsEndRef = useRef(null);
-  
+
   // Reset guess when turn changes
   useEffect(() => {
     setCurrentGuess('0'.repeat(digits));
     setError('');
   }, [turn, digits]);
-  
+
   // Auto-scroll logs
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs.length]);
-  
+
   const isHardMode = difficulty === 'Hard';
   const isMyTurn = turn === 'me';
-  
+
   const handleGuessChange = (newGuess) => {
     setCurrentGuess(newGuess);
     setError('');
   };
-  
+
   const handleSubmit = () => {
     // Check for duplicate digits
     const digitSet = new Set(currentGuess.split(''));
@@ -361,27 +374,32 @@ function GameArena({
       setError('All digits must be unique!');
       return;
     }
-    
+
     onGuess(currentGuess);
     setCurrentGuess('0'.repeat(digits));
     setError('');
   };
-  
+
   // ─── GAME OVER SCREEN ───
   if (isGameOver) {
     const winnerIsMe = winner === 'me' || winner === 'PLAYER_1';
     const winnerName = winnerIsMe ? myName : opponentName;
-    
+
     return (
-      <div className="min-h-screen bg-[#0d1117] flex flex-col font-space">
+      <div className="min-h-screen bg-background-dark flex flex-col font-space relative overflow-hidden">
+        {/* Scanlines Overlay */}
         <div className="scanlines" />
-        
+
+        {/* Background Decorations */}
+        <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
+
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full px-4">
           {/* Trophy */}
-          <div className="text-primary mb-6 animate-bounce">
+          <div className="text-primary mb-6 animate-bounce drop-shadow-[0_0_25px_rgba(250,204,20,0.6)]">
             <TrophyIcon className="w-24 h-24" />
           </div>
-          
+
           {/* Winner Text */}
           <h2 className="text-3xl font-bold text-white text-center mb-2 glitch-text">
             {winnerName} WINS!
@@ -389,26 +407,26 @@ function GameArena({
           <p className="text-slate-400 text-center mb-8">
             🎉 {winnerIsMe ? 'Congratulations!' : 'Better luck next time!'}
           </p>
-          
+
           {/* Stats */}
-          <div className="w-full bg-[#1f2937] rounded-xl p-4 border border-slate-700 mb-8">
+          <div className="w-full bg-surface-dark/80 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 mb-8 shadow-xl shadow-black/30">
             <div className="text-center text-slate-400 text-sm mb-2">Final Score</div>
             <div className="text-center text-2xl font-bold text-white font-mono">
               {config.score}
             </div>
           </div>
-          
+
           {/* Actions */}
           <div className="w-full space-y-3">
             <button
               onClick={onPlayAgain}
-              className="w-full py-4 rounded-full bg-primary text-black font-bold text-lg shadow-neon hover:bg-yellow-400 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-full bg-primary text-black font-bold text-lg shadow-neon hover:shadow-neon-strong hover:bg-yellow-400 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider"
             >
               🔄 Play Again
             </button>
             <button
               onClick={onQuit}
-              className="w-full py-3 rounded-full bg-slate-800 text-slate-300 font-semibold border border-slate-700 hover:bg-slate-700 transition-all active:scale-[0.98]"
+              className="w-full py-3 rounded-full bg-surface-dark/80 backdrop-blur-sm text-slate-300 font-semibold border border-slate-700/50 hover:bg-slate-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-black/30"
             >
               🏠 Back to Home
             </button>
@@ -417,51 +435,61 @@ function GameArena({
       </div>
     );
   }
-  
+
   // ─── MAIN GAME UI ───
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col font-space">
+    <div
+      className="fixed inset-0 bg-background-dark font-space flex flex-col"
+    >
+      {/* Scanlines Overlay */}
       <div className="scanlines" />
-      
-      <div className="relative z-10 h-screen flex flex-col w-full max-w-lg mx-auto">
-        
+
+      {/* Background Decorations - Matching Auth Page */}
+      <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-primary/3 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+
+      <div className="w-full max-w-lg mx-auto h-full flex flex-col relative z-10">
+
         {/* ═══ FIXED HEADER ═══ */}
-        <div className="flex-shrink-0 px-3 sm:px-4 pt-2 sm:pt-4 pb-2 sm:pb-3 bg-[#0d1117]">
+        <header className="flex-shrink-0 px-3 sm:px-4 pb-2 pt-4 sm:pt-6">
           {/* 1. Match Info Pill */}
-          <MatchInfoPill 
-            score={config.score} 
-            format={config.format} 
-            difficulty={difficulty} 
+          <MatchInfoPill
+            score={config.score}
+            format={config.format}
+            difficulty={difficulty}
           />
-          
+
           {/* 2. Player Cards */}
-          <div className="flex gap-2 sm:gap-3 mb-2 sm:mb-3">
-            <PlayerCard 
+          <div className="flex gap-2 sm:gap-3 mt-2">
+            <PlayerCard
               name={myName}
               isMe={true}
               isActive={isMyTurn}
               attempts={myAttempts}
             />
-            <PlayerCard 
+            <PlayerCard
               name={opponentName}
               isMe={false}
               isActive={!isMyTurn}
               attempts={opponentAttempts}
             />
           </div>
-          
+
           {/* 3. Timer (Hard Mode Only) */}
           {isHardMode && (
-            <TimerBar timer={timer} maxTime={maxTime} />
+            <div className="mt-3">
+              <TimerBar timer={timer} maxTime={maxTime} />
+            </div>
           )}
-        </div>
-        
-        {/* ═══ SCROLLABLE MOVE HISTORY ═══ */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-4 scrollbar-hide min-h-0">
+        </header>
+
+        {/* ═══ SCROLLABLE MOVE HISTORY (only this section scrolls) ═══ */}
+        <main className="flex-1 overflow-y-auto min-h-0 px-3 sm:px-4 scrollbar-hide">
           {/* Move History List */}
-          <div className="space-y-3 pb-2 pt-2">
+          <div className="space-y-4 py-4">
             {logs.length === 0 ? (
-              <div className="text-center py-4 sm:py-6 text-slate-500 text-sm">
+              <div className="text-center py-12 text-slate-500 text-sm">
                 No moves yet. Make the first guess!
               </div>
             ) : (
@@ -471,14 +499,14 @@ function GameArena({
             )}
             <div ref={logsEndRef} />
           </div>
-        </div>
-        
+        </main>
+
         {/* ═══ FIXED INPUT DRAWER (Bottom) ═══ */}
-        <div className="flex-shrink-0">
+        <footer className="flex-shrink-0">
           {error && (
             <p className="text-red-400 text-sm text-center px-3 sm:px-4 pb-2">{error}</p>
           )}
-          
+
           <InputDrawer
             value={currentGuess}
             digits={digits}
@@ -486,7 +514,7 @@ function GameArena({
             onSubmit={handleSubmit}
             disabled={false}
           />
-        </div>
+        </footer>
       </div>
     </div>
   );

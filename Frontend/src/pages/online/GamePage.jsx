@@ -1,17 +1,16 @@
+/**
+ * OnlineGamePage - The Arena UI for Online 1v1 Bulls & Cows
+ * Cyber Minimalist Design with three phases: SETUP, PLAYING, GAME_OVER
+ */
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useGameStore from '../../store/useGameStore';
 import { getSocket } from '../../services/socket';
 
-/**
- * OnlineGame - The Arena UI for Online 1v1 Bulls, Cows & Shit
- * Cyber Minimalist Design with three phases: SETUP, PLAYING, GAME_OVER
- */
-const OnlineGame = () => {
+const OnlineGamePage = () => {
   const { roomCode } = useParams();
   const navigate = useNavigate();
   
-  // Get state and actions from store
   const {
     gameState,
     currentTurn,
@@ -35,12 +34,9 @@ const OnlineGame = () => {
   const [error, setError] = useState('');
   const [myUserId, setMyUserId] = useState(null);
 
-  // Initialize game and socket listeners
   useEffect(() => {
     const socket = getSocket();
     setMyUserId(socket.user?._id?.toString() || socket.id);
-    
-    // Setup socket listeners for game events
     setupSocketListeners();
 
     return () => {
@@ -48,18 +44,13 @@ const OnlineGame = () => {
     };
   }, [setupSocketListeners, removeSocketListeners]);
 
-  // Check if it's my turn
   const isMyTurn = currentTurn === myUserId;
-
-  // Get my logs and opponent's logs
   const myLogs = logs.filter(log => log.player === myUserId);
   const opponentLogs = logs.filter(log => log.player !== myUserId);
 
-  // Handle secret submission
   const handleSubmitSecret = () => {
     setError('');
     
-    // Validate secret
     if (secretInput.length !== digits) {
       setError(`Secret must be exactly ${digits} digits`);
       return;
@@ -83,11 +74,9 @@ const OnlineGame = () => {
     });
   };
 
-  // Handle guess submission
   const handleSubmitGuess = () => {
     setError('');
     
-    // Validate guess
     if (guessInput.length !== digits) {
       setError(`Guess must be exactly ${digits} digits`);
       return;
@@ -113,10 +102,9 @@ const OnlineGame = () => {
     });
   };
 
-  // Handle return to lobby
   const handleReturnToLobby = () => {
     useGameStore.getState().resetGame();
-    navigate('/');
+    navigate('/home');
   };
 
   // Number pad component
@@ -176,7 +164,7 @@ const OnlineGame = () => {
     );
   };
 
-  // Render result dots
+  // Result dots component
   const ResultDots = ({ bulls, cows, shit }) => (
     <div className="flex gap-1">
       {[...Array(bulls)].map((_, i) => (
@@ -186,7 +174,7 @@ const OnlineGame = () => {
         <span key={`c${i}`} className="w-3 h-3 rounded-full bg-yellow-500" title="Cow" />
       ))}
       {[...Array(shit)].map((_, i) => (
-        <span key={`s${i}`} className="w-3 h-3 rounded-full bg-slate-600" title="Shit" />
+        <span key={`s${i}`} className="w-3 h-3 rounded-full bg-slate-600" title="Miss" />
       ))}
     </div>
   );
@@ -196,12 +184,9 @@ const OnlineGame = () => {
     return (
       <div className="min-h-screen bg-background-dark flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          {/* Card */}
           <div className="bg-surface-dark rounded-xl p-8 border border-slate-700 tech-border">
-            {/* Scanlines effect */}
             <div className="scanlines pointer-events-none absolute inset-0 opacity-5"></div>
             
-            {/* Header */}
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-primary font-space tracking-wider">
                 🔐 SECURE YOUR DATA
@@ -216,7 +201,6 @@ const OnlineGame = () => {
               )}
             </div>
 
-            {/* Secret Input Display */}
             <div className="bg-input-bg rounded-lg p-4 mb-4 border border-slate-700">
               <div className="flex justify-center gap-2">
                 {[...Array(digits)].map((_, i) => (
@@ -236,14 +220,12 @@ const OnlineGame = () => {
               </div>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="bg-red-900/30 border border-red-500 rounded-lg p-3 mb-4">
                 <p className="text-red-400 text-sm text-center">{error}</p>
               </div>
             )}
 
-            {/* Number Pad or Waiting State */}
             {!isMySecretSubmitted ? (
               <>
                 <NumberPad 
@@ -284,11 +266,10 @@ const OnlineGame = () => {
     );
   }
 
-  // ============ PLAYING PHASE (The HUD) ============
+  // ============ PLAYING PHASE ============
   if (gameState === 'PLAYING') {
     return (
       <div className="min-h-screen bg-background-dark flex flex-col">
-        {/* Header - Turn Indicator */}
         <header className="bg-surface-dark border-b border-slate-700 p-4">
           <div className="max-w-4xl mx-auto flex justify-between items-center">
             <div className="text-slate-400 text-sm">
@@ -308,9 +289,7 @@ const OnlineGame = () => {
           </div>
         </header>
 
-        {/* Main Content - Split View */}
         <main className="flex-1 flex max-w-4xl mx-auto w-full p-4 gap-4 overflow-hidden">
-          {/* Left Panel - Your Logs */}
           <div className="flex-1 bg-surface-dark rounded-xl border border-slate-700 flex flex-col">
             <div className="p-3 border-b border-slate-700">
               <h2 className="text-green-400 font-bold uppercase tracking-wider text-sm">
@@ -336,7 +315,6 @@ const OnlineGame = () => {
             </div>
           </div>
 
-          {/* Right Panel - Enemy Logs */}
           <div className="flex-1 bg-surface-dark rounded-xl border border-slate-700 flex flex-col">
             <div className="p-3 border-b border-slate-700">
               <h2 className="text-red-400 font-bold uppercase tracking-wider text-sm">
@@ -363,7 +341,6 @@ const OnlineGame = () => {
           </div>
         </main>
 
-        {/* Bottom Bar - Input */}
         <footer className="bg-surface-dark border-t border-slate-700 p-4">
           <div className="max-w-4xl mx-auto">
             {error && (
@@ -416,21 +393,17 @@ const OnlineGame = () => {
     
     return (
       <div className="min-h-screen bg-background-dark flex items-center justify-center p-4">
-        {/* Overlay */}
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm"></div>
         
-        {/* Modal */}
         <div className={`
           relative z-10 w-full max-w-md bg-surface-dark rounded-xl p-8 
           border-2 ${isWinner ? 'border-primary' : 'border-red-500'}
           tech-border text-center
         `}>
-          {/* Icon */}
           <div className="text-6xl mb-4">
             {isWinner ? '🏆' : '💀'}
           </div>
           
-          {/* Title */}
           <h1 className={`
             text-3xl font-bold uppercase tracking-wider mb-2
             ${isWinner ? 'text-primary glitch-text' : 'text-red-500'}
@@ -438,14 +411,12 @@ const OnlineGame = () => {
             {isWinner ? 'MISSION ACCOMPLISHED' : 'SYSTEM FAILURE'}
           </h1>
           
-          {/* Subtitle */}
           <p className="text-slate-400 mb-6">
             {isWinner 
               ? 'Target neutralized. Well played, agent.' 
               : `${winnerName || 'Opponent'} cracked your code.`}
           </p>
 
-          {/* Final Scores */}
           <div className="bg-input-bg rounded-lg p-4 mb-6">
             <p className="text-slate-400 text-sm mb-2">FINAL SCORE</p>
             <p className="text-2xl font-bold text-white">
@@ -453,7 +424,6 @@ const OnlineGame = () => {
             </p>
           </div>
 
-          {/* Return Button */}
           <button
             onClick={handleReturnToLobby}
             className={`
@@ -464,14 +434,13 @@ const OnlineGame = () => {
                 : 'bg-red-600 text-white hover:bg-red-500'}
             `}
           >
-            ← RETURN TO LOBBY
+            ← RETURN TO HOME
           </button>
         </div>
       </div>
     );
   }
 
-  // Fallback loading state
   return (
     <div className="min-h-screen bg-background-dark flex items-center justify-center">
       <div className="text-primary animate-pulse text-xl font-bold">
@@ -481,4 +450,4 @@ const OnlineGame = () => {
   );
 };
 
-export default OnlineGame;
+export default OnlineGamePage;
