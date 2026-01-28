@@ -1,11 +1,8 @@
 /**
  * GameOverScreen - Victory/Defeat Screen Component
- * 
- * Displayed when a game ends, showing:
- * - Winner announcement with trophy animation
- * - Final score
- * - Play Again and Quit buttons
+ * Pure presentation component for game end state
  */
+import { memo } from 'react';
 
 // Trophy Icon
 const TrophyIcon = ({ className }) => (
@@ -16,65 +13,117 @@ const TrophyIcon = ({ className }) => (
 );
 
 const GameOverScreen = ({
-  winner,
-  myName,
-  opponentName,
+  winnerName,
+  winnerIsMe,
   score,
   onPlayAgain,
   onQuit
 }) => {
-  const winnerIsMe = winner === 'me' || winner === 'PLAYER_1';
-  const winnerName = winnerIsMe ? myName : opponentName;
 
   return (
     <div className="min-h-screen bg-background-dark flex flex-col font-space relative overflow-hidden">
       {/* Scanlines Overlay */}
       <div className="scanlines" />
 
-      {/* Background Decorations */}
-      <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
+      {/* Enhanced Background Decorations */}
+      <div className="absolute top-0 left-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-pulse" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
 
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full px-4">
-        {/* Trophy */}
-        <div className="text-primary mb-6 animate-bounce drop-shadow-[0_0_25px_rgba(250,204,20,0.6)]">
-          <TrophyIcon className="w-24 h-24" />
-        </div>
+        {/* Main Card Container */}
+        <div className="w-full bg-gradient-to-b from-surface-dark/95 to-surface-dark/80 backdrop-blur-xl rounded-3xl border-2 border-primary/30 shadow-2xl shadow-primary/20 p-8 relative overflow-hidden">
+          {/* Glow effect on card edges */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 rounded-3xl pointer-events-none" />
+          
+          {/* Content */}
+          <div className="relative z-10">
+            {/* Trophy */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                {/* Glow ring */}
+                <div className="absolute inset-0 -m-4 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                <div className="relative text-primary drop-shadow-[0_0_30px_rgba(250,204,20,0.8)] animate-bounce">
+                  <TrophyIcon className="w-28 h-28" />
+                </div>
+              </div>
+            </div>
 
-        {/* Winner Text */}
-        <h2 className="text-3xl font-bold text-white text-center mb-2 glitch-text">
-          {winnerName} WINS!
-        </h2>
-        <p className="text-slate-400 text-center mb-8">
-          🎉 {winnerIsMe ? 'Congratulations!' : 'Better luck next time!'}
-        </p>
+            {/* Victory Badge */}
+            <div className="text-center mb-6">
+              <div className="inline-block px-6 py-2 bg-primary/10 border-2 border-primary/40 rounded-full backdrop-blur-sm mb-4">
+                <span className="text-primary text-sm font-bold tracking-widest uppercase">
+                  ⚡ Victory ⚡
+                </span>
+              </div>
+            </div>
 
-        {/* Stats */}
-        <div className="w-full bg-surface-dark/80 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 mb-8 shadow-xl shadow-black/30">
-          <div className="text-center text-slate-400 text-sm mb-2">Final Score</div>
-          <div className="text-center text-2xl font-bold text-white font-mono">
-            {score}
+            {/* Winner Text */}
+            <h2 className="text-4xl font-bold text-center mb-3 bg-gradient-to-r from-primary via-yellow-300 to-primary bg-clip-text text-transparent animate-pulse">
+              {winnerName}
+            </h2>
+            <p className="text-2xl font-bold text-white text-center mb-2">
+              WINS THE MATCH!
+            </p>
+            <p className="text-lg text-center mb-8">
+              <span className={winnerIsMe ? 'text-green-400' : 'text-blue-400'}>
+                {winnerIsMe ? '🎊 Outstanding Performance!' : '💪 Well Played!'}
+              </span>
+            </p>
+
+            {/* Stats Card */}
+            <div className="mb-8 p-6 bg-black/40 backdrop-blur-sm rounded-2xl border-2 border-slate-700/50 shadow-inner relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+              <div className="relative z-10">
+                <div className="text-center text-slate-400 text-sm mb-3 uppercase tracking-wider font-semibold">Final Score</div>
+                <div className="text-center text-5xl font-bold text-white font-mono mb-2 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                  {score}
+                </div>
+                <div className="flex justify-center gap-2 mt-3">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-4">
+              <button
+                onClick={onPlayAgain}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-yellow-400 to-primary text-black font-bold text-lg shadow-[0_0_30px_rgba(250,204,20,0.5)] hover:shadow-[0_0_50px_rgba(250,204,20,0.8)] transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center gap-3 uppercase tracking-wider relative overflow-hidden group"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                <span className="relative">🔄 Play Again</span>
+              </button>
+              <button
+                onClick={onQuit}
+                className="w-full py-4 rounded-2xl bg-surface-dark/60 backdrop-blur-sm text-slate-300 font-semibold text-base border-2 border-slate-600/50 hover:bg-slate-700/80 hover:border-slate-500 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-black/30 flex items-center justify-center gap-2"
+              >
+                <span>🏠 Back to Home</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="w-full space-y-3">
-          <button
-            onClick={onPlayAgain}
-            className="w-full py-4 rounded-full bg-primary text-black font-bold text-lg shadow-neon hover:shadow-neon-strong hover:bg-yellow-400 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider"
-          >
-            🔄 Play Again
-          </button>
-          <button
-            onClick={onQuit}
-            className="w-full py-3 rounded-full bg-surface-dark/80 backdrop-blur-sm text-slate-300 font-semibold border border-slate-700/50 hover:bg-slate-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-black/30"
-          >
-            🏠 Back to Home
-          </button>
+        {/* Floating particles effect */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-primary/30 rounded-full animate-pulse"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${i * 0.3}s`,
+                animationDuration: `${2 + Math.random() * 2}s`
+              }}
+            />
+          ))}
         </div>
       </div>
     </div>
   );
 };
 
-export default GameOverScreen;
+export default memo(GameOverScreen);

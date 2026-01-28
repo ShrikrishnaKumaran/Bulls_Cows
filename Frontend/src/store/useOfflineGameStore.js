@@ -31,6 +31,14 @@ const useOfflineGameStore = create((set, get) => ({
   
   // Game Results
   winner: null, // 'PLAYER_1' | 'PLAYER_2' | 'DRAW' | null
+  roundWinner: null, // Track who won the last round
+  
+  // Score Tracking (for Best of X format)
+  score: {
+    player1: 0,
+    player2: 0
+  },
+  currentRound: 1, // Current round number
   
   // ═══════════════════════════════════════════════════════════
   // SETUP WIZARD ACTIONS
@@ -64,9 +72,17 @@ const useOfflineGameStore = create((set, get) => ({
    */
   resetSetup: () => set({
     setupStep: 1,
+    gamePhase: 'SETUP',
     config: { digits: 4, difficulty: 'Easy', format: 1 },
     player1Secret: '',
-    player2Secret: ''
+    player2Secret: '',
+    player1Guesses: [],
+    player2Guesses: [],
+    winner: null,
+    roundWinner: null,
+    score: { player1: 0, player2: 0 },
+    currentRound: 1,
+    turn: 'PLAYER_1'
   }),
   
   // ═══════════════════════════════════════════════════════════
@@ -92,7 +108,7 @@ const useOfflineGameStore = create((set, get) => ({
    * Start the game after both secrets are set
    */
   startGame: () => {
-    const { player1Secret, player2Secret, digits } = get();
+    const { player1Secret, player2Secret, digits, turn } = get();
     
     // Validate both secrets
     if (!player1Secret || player1Secret.length !== digits) {
@@ -105,7 +121,8 @@ const useOfflineGameStore = create((set, get) => ({
     
     set({ 
       gamePhase: 'PLAYING',
-      turn: 'PLAYER_1',
+      // Preserve the turn if it was set (e.g., loser goes first), otherwise default to PLAYER_1
+      turn: turn || 'PLAYER_1',
       player1Guesses: [],
       player2Guesses: [],
       winner: null
@@ -138,13 +155,29 @@ const useOfflineGameStore = create((set, get) => ({
       
       const updatedGuesses = [...player1Guesses, newGuess];
       
-      // Check if Player 1 won
+      // Check if Player 1 won this round
       if (result.isWin) {
-        set({
-          player1Guesses: updatedGuesses,
-          gamePhase: 'GAME_OVER',
-          winner: 'PLAYER_1'
-        });
+        const { score, config, currentRound } = get();
+        const newScore = { ...score, player1: score.player1 + 1 };
+        
+        // Check if Player 1 won the match (Best of X)
+        const requiredWins = Math.ceil(config.format / 2);
+        if (newScore.player1 >= requiredWins) {
+          set({
+            player1Guesses: updatedGuesses,
+            gamePhase: 'GAME_OVER',
+            winner: 'PLAYER_1',
+            score: newScore
+          });
+        } else {
+          // Show round over screen
+          set({
+            player1Guesses: updatedGuesses,
+            gamePhase: 'ROUND_OVER',
+            roundWinner: 'PLAYER_1',
+            score: newScore
+          });
+        }
         return { success: true, result, isWin: true };
       }
       
@@ -174,13 +207,29 @@ const useOfflineGameStore = create((set, get) => ({
       
       const updatedGuesses = [...player2Guesses, newGuess];
       
-      // Check if Player 2 won
+      // Check if Player 2 won this round
       if (result.isWin) {
-        set({
-          player2Guesses: updatedGuesses,
-          gamePhase: 'GAME_OVER',
-          winner: 'PLAYER_2'
-        });
+        const { score, config, currentRound } = get();
+        const newScore = { ...score, player2: score.player2 + 1 };
+        
+        // Check if Player 2 won the match (Best of X)
+        const requiredWins = Math.ceil(config.format / 2);
+        if (newScore.player2 >= requiredWins) {
+          set({
+            player2Guesses: updatedGuesses,
+            gamePhase: 'GAME_OVER',
+            winner: 'PLAYER_2',
+            score: newScore
+          });
+        } else {
+          // Show round over screen
+          set({
+            player2Guesses: updatedGuesses,
+            gamePhase: 'ROUND_OVER',
+            roundWinner: 'PLAYER_2',
+            score: newScore
+          });
+        }
         return { success: true, result, isWin: true };
       }
       
@@ -194,6 +243,27 @@ const useOfflineGameStore = create((set, get) => ({
     }
   },
   
+  /**
+   * Continue to next round (after round over screen)
+   * The loser of the previous round will guess first in the next round
+   */
+  continueToNextRound: () => {
+    const { roundWinner, currentRound } = get();
+    const loser = roundWinner === 'PLAYER_1' ? 'PLAYER_2' : 'PLAYER_1';
+    
+    set({
+      player1Guesses: [],
+      player2Guesses: [],
+      player1Secret: '',
+      player2Secret: '',
+      gamePhase: 'SETUP',
+      setupStep: 2, // Skip config, go straight to P1 secret entry
+      turn: loser, // Loser will make the first guess
+      currentRound: currentRound + 1,
+      roundWinner: null
+    });
+  },
+
   /**
    * Skip turn (when timer runs out in Hard mode)
    */
@@ -216,7 +286,10 @@ const useOfflineGameStore = create((set, get) => ({
     player2Secret: '',
     player1Guesses: [],
     player2Guesses: [],
-    winner: null
+    winner: null,
+    roundWinner: null,
+    score: { player1: 0, player2: 0 },
+    currentRound: 1
   }),
   
   /**
@@ -229,7 +302,10 @@ const useOfflineGameStore = create((set, get) => ({
     player2Secret: '',
     player1Guesses: [],
     player2Guesses: [],
-    winner: null
+    winner: null,
+    roundWinner: null,
+    score: { player1: 0, player2: 0 },
+    currentRound: 1
   })
 }));
 

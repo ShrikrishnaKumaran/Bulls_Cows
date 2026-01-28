@@ -6,14 +6,18 @@ export default defineConfig({
   server: {
     host: '0.0.0.0', // Expose to network
     port: 5173,
+    strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://10.68.10.134:5000',
-        changeOrigin: true
+        target: process.env.VITE_API_URL || 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path
       },
       '/socket.io': {
-        target: 'http://10.68.10.134:5000',
+        target: process.env.VITE_API_URL || 'http://localhost:5000',
         changeOrigin: true,
+        secure: false,
         ws: true
       }
     }

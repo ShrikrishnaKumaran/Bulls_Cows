@@ -169,9 +169,14 @@ export default function AuthPage() {
       <div className="relative z-10 w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-white glitch-text mb-2">
-            BULLS & COWS
+          <h1 className="text-4xl md:text-5xl font-bold glitch-text mb-3 tracking-tight">
+            <span className="text-white">BULLS</span>
+            <span className="text-primary mx-2">&</span>
+            <span className="text-white">COWS</span>
           </h1>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-primary to-transparent" />
+          </div>
           <p className="text-slate-400 text-sm uppercase tracking-widest">
             Enter the Arena
           </p>
@@ -257,7 +262,7 @@ export default function AuthPage() {
         <TechFooter />
 
         <div className="mt-4 text-center">
-          <span className="text-xs text-slate-600">v1.0.0 • Built with ⚡</span>
+          <span className="text-xs text-slate-600">v1.0.0 • Built with ❤️</span>
         </div>
       </div>
     </div>

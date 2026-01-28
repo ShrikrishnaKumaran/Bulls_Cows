@@ -12,6 +12,37 @@ import SetupStepper from './SetupStepper';
 import CyberDrumInput from '../ui/CyberDrumInput';
 import { BackIcon, LockIcon } from './SetupIcons';
 
+// Icons for summary panel
+const Hash = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="4" y1="9" x2="20" y2="9" />
+    <line x1="4" y1="15" x2="20" y2="15" />
+    <line x1="10" y1="3" x2="8" y2="21" />
+    <line x1="16" y1="3" x2="14" y2="21" />
+  </svg>
+);
+
+const Trophy = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+    <path d="M4 22h16" />
+    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+  </svg>
+);
+
+const Timer = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="13" r="8" />
+    <path d="M12 9v4l2 2" />
+    <path d="m5 3-1 1" />
+    <path d="m19 3 1 1" />
+    <path d="M9 1h6" />
+  </svg>
+);
+
 const SecretEntryStep = ({
   playerNumber, // 1 or 2
   config,
@@ -78,26 +109,29 @@ const SecretEntryStep = ({
           {/* Mission Summary HUD */}
           <div className="bg-surface-dark/50 border border-slate-700/50 rounded-lg p-3 mb-4 text-xs font-mono">
             <div className="flex justify-between items-center mb-2">
-              <div>
+              <div className="flex items-center gap-1.5">
+                <Hash size={14} className="text-slate-500" />
                 <span className="text-slate-400">TARGET:</span>{' '}
                 <span className="text-primary">{config.digits}-DIGIT</span>
               </div>
-              <div>
+              <div className="flex items-center gap-1.5">
+                <Trophy size={14} className="text-slate-500" />
                 <span className="text-slate-400">PROTOCOL:</span>{' '}
                 <span className="text-white">{config.format === 1 ? 'SINGLE' : `BO${config.format}`}</span>
               </div>
             </div>
-            <div className="text-center pt-2 border-t border-slate-700/30">
+            <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-slate-700/30">
+              <Timer size={14} className={config.difficulty === 'Easy' ? 'text-green-400' : 'text-red-400'} />
               <span className={config.difficulty === 'Easy' ? 'text-green-400' : 'text-red-400'}>
                 {config.difficulty === 'Easy' 
-                  ? '⏱ NO TIMER • FULL HISTORY' 
-                  : '⏱ 30s TIMER • LAST 5 GUESSES ONLY'}
+                  ? 'NO TIMER • FULL HISTORY' 
+                  : '30s TIMER • LAST 5 GUESSES ONLY'}
               </span>
             </div>
           </div>
 
           {/* Drum Input Container - Vault Style */}
-          <div className="border-2 border-dashed border-slate-700/50 p-4 rounded-2xl bg-black/30 mb-4">
+          <div className="border-2 border-dashed border-slate-700/50 p-4 rounded-2xl bg-black/30 mb-4 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
             <CyberDrumInput
               length={config.digits}
               value={currentSecret}
@@ -126,20 +160,26 @@ const SecretEntryStep = ({
           </div>
 
           {error && (
-            <p className="text-red-400 text-xs text-center mb-3 font-mono">{error}</p>
+            <div className="flex justify-center mb-3">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-full px-4 py-1 inline-flex items-center gap-2">
+                <span className="text-red-400 animate-pulse">⚠</span>
+                <span className="text-red-400 text-xs font-mono">{error}</span>
+              </div>
+            </div>
           )}
 
           {/* Action Button - Solid Neon */}
           <button
             onClick={onSubmit}
-            disabled={!isValidSecret}
+            disabled={!isValidSecret || error}
             className={`
               w-full py-4 rounded-xl font-bold text-sm uppercase tracking-[0.2em]
               transition-all duration-200 active:scale-[0.98]
-              ${isValidSecret
+              ${isValidSecret && !error
                 ? 'bg-primary text-black shadow-[0_0_25px_rgba(250,204,20,0.4)] hover:shadow-[0_0_35px_rgba(250,204,20,0.6)] hover:translate-y-[-2px]'
                 : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
               }
+              ${error ? 'opacity-50' : ''}
             `}
           >
             {isPlayer1 ? '🔒 Encrypt & Lock In' : '🎮 Encrypt & Start Game'}

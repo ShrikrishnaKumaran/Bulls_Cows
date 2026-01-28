@@ -111,12 +111,12 @@ function GameRulesModal({ onClose }) {
           >
             <div className="space-y-1.5 mt-1">
               <div className="flex items-center gap-2">
-                <span>🦬</span>
+                <span>🐂</span>
                 <span className="text-yellow-400 font-semibold text-xs">BULL</span>
                 <span className="text-slate-400 text-xs">— Right digit, Right spot</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-blue-400">🐄</span>
+                <span className="text-blue-400">🐮</span>
                 <span className="text-blue-400 font-semibold text-xs">COW</span>
                 <span className="text-slate-400 text-xs">— Right digit, Wrong spot</span>
               </div>

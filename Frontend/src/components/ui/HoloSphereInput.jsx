@@ -6,250 +6,234 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-// Looped array for infinite scroll: [7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]
+/**
+ * CONFIGURATION
+ * We generate 3 sets of numbers.
+ * The user operates in the "Middle" set.
+ * If they scroll to the Top set, we teleport them to Middle.
+ * If they scroll to the Bottom set, we teleport them to Middle.
+ */
 const BASE_NUMBERS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-const LOOPED_NUMBERS = [...BASE_NUMBERS.slice(7), ...BASE_NUMBERS, ...BASE_NUMBERS, ...BASE_NUMBERS.slice(0, 3)];
-const LOOP_OFFSET = 3;
-const TOTAL_ITEMS = 10;
+// [Set 1 (Buffer)] -- [Set 2 (Active)] -- [Set 3 (Buffer)]
+const LOOP_SETS = 3; 
+const ITEMS_PER_SET = 10;
+const ALL_NUMBERS = [...BASE_NUMBERS, ...BASE_NUMBERS, ...BASE_NUMBERS];
+const MIDDLE_SET_OFFSET = ITEMS_PER_SET; // The index where the middle set starts (10)
 
-// Individual 3D Holo-Sphere Column with Infinite Scroll
-const HoloSphere = ({ value, onChange, disabled }) => {
+const HoloSphere = ({ value, onChange, disabled, size = 'md' }) => {
   const containerRef = useRef(null);
-  const isScrollingRef = useRef(false);
-  const isAdjustingRef = useRef(false);
+  const observerRef = useRef(null);
+  const isTeleporting = useRef(false);
+  const [activeDigit, setActiveDigit] = useState(value);
+  const [isInteracting, setIsInteracting] = useState(false);
 
-  const [isActive, setIsActive] = useState(false);
-  const [itemHeight, setItemHeight] = useState(0);
-  const sphereRef = useRef(null);
-
-  // Calculate item height based on sphere size
+  // --- 1. INITIAL SETUP: Scroll to initial value ---
   useEffect(() => {
-    if (sphereRef.current) {
-      const sphereHeight = sphereRef.current.offsetHeight;
-      setItemHeight(sphereHeight * 0.35);
-    }
-  }, []);
-
-  // Scroll to current value on mount
-  useEffect(() => {
-    if (containerRef.current && !isScrollingRef.current && itemHeight > 0) {
-      // Position in the middle set (index = LOOP_OFFSET + value)
-      const targetIndex = LOOP_OFFSET + value;
-      const targetScroll = targetIndex * itemHeight;
-      containerRef.current.scrollTo({
-        top: targetScroll,
+    if (containerRef.current) {
+      const container = containerRef.current;
+      const height = container.clientHeight;
+      // Calculate position in the Middle Set
+      const targetIndex = MIDDLE_SET_OFFSET + parseInt(value, 10);
+      
+      // Instant jump on mount
+      container.scrollTo({
+        top: targetIndex * height,
         behavior: 'instant'
       });
+      setActiveDigit(parseInt(value, 10));
     }
-  }, [value, itemHeight]);
+  }, []); // Run once on mount
 
-  // Handle infinite scroll wrapping
-  const handleScroll = useCallback(() => {
-    if (isScrollingRef.current || itemHeight === 0 || isAdjustingRef.current) return;
-
+  // --- 2. INTERSECTION OBSERVER: Detects Glow & Value ---
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    isScrollingRef.current = true;
+    // Disconnect previous observer
+    if (observerRef.current) observerRef.current.disconnect();
 
-    setTimeout(() => {
-      const scrollTop = container.scrollTop;
-      let selectedIndex = Math.round(scrollTop / itemHeight);
+    const callback = (entries) => {
+      entries.forEach((entry) => {
+        // If an item is mostly visible (threshold 0.7)
+        if (entry.isIntersecting && !isTeleporting.current) {
+          const rawIndex = parseInt(entry.target.getAttribute('data-index'), 10);
+          const actualDigit = parseInt(entry.target.getAttribute('data-value'), 10);
 
-      // Get actual digit value from looped array
-      const actualDigit = LOOPED_NUMBERS[selectedIndex];
+          setActiveDigit(actualDigit);
+          
+          // Only trigger change if it's different to prevent loops
+          if (actualDigit !== value) {
+            onChange(actualDigit);
+          }
+        }
+      });
+    };
 
-      // If scrolled too far up or down, reset to middle section
-      if (selectedIndex < LOOP_OFFSET || selectedIndex >= LOOP_OFFSET + TOTAL_ITEMS) {
-        isAdjustingRef.current = true;
-        const newIndex = LOOP_OFFSET + actualDigit;
-        container.scrollTo({
-          top: newIndex * itemHeight,
-          behavior: 'instant'
-        });
-        setTimeout(() => {
-          isAdjustingRef.current = false;
-        }, 50);
-      } else {
-        // Snap to position
-        container.scrollTo({
-          top: selectedIndex * itemHeight,
-          behavior: 'smooth'
-        });
-      }
+    observerRef.current = new IntersectionObserver(callback, {
+      root: container,
+      threshold: 0.65, // Item must be 65% visible to count as "Active"
+    });
 
-      if (actualDigit !== value) {
-        onChange(actualDigit);
-      }
+    // Observe all children
+    const items = container.querySelectorAll('.sphere-item');
+    items.forEach((item) => observerRef.current.observe(item));
 
-      isScrollingRef.current = false;
-    }, 300);
-  }, [value, onChange, itemHeight]);
+    return () => observerRef.current?.disconnect();
+  }, [onChange, value]); // Re-bind if external handlers change
 
-  // Scroll to specific number when clicked
-  const scrollToNumber = (num) => {
-    if (disabled || itemHeight === 0) return;
-    const targetIndex = LOOP_OFFSET + num;
-    containerRef.current?.scrollTo({
-      top: targetIndex * itemHeight,
+  // --- 3. INFINITE SCROLL LOGIC (The Teleport) ---
+  const handleScroll = useCallback(() => {
+    const container = containerRef.current;
+    if (!container || isTeleporting.current) return;
+
+    const scrollTop = container.scrollTop;
+    const height = container.clientHeight;
+    const totalHeight = container.scrollHeight;
+
+    // Thresholds to jump back to middle
+    // If we are in the Top Set (Set 1)
+    if (scrollTop < height * ITEMS_PER_SET * 0.5) {
+      isTeleporting.current = true;
+      const offset = scrollTop;
+      // Jump forward by one set length
+      const jumpAmount = height * ITEMS_PER_SET;
+      container.scrollTop = offset + jumpAmount;
+      
+      // Small timeout to let the browser paint the jump before re-enabling observer logic
+      requestAnimationFrame(() => { isTeleporting.current = false; });
+    }
+    // If we are in the Bottom Set (Set 3)
+    else if (scrollTop > totalHeight - (height * ITEMS_PER_SET * 0.5)) {
+      isTeleporting.current = true;
+      const offset = scrollTop;
+      // Jump backward by one set length
+      const jumpAmount = height * ITEMS_PER_SET;
+      container.scrollTop = offset - jumpAmount;
+      
+      requestAnimationFrame(() => { isTeleporting.current = false; });
+    }
+  }, []);
+
+  // --- 4. CLICK TO SELECT ---
+  const scrollToNumber = (num, idx) => {
+    if (disabled || !containerRef.current) return;
+    const height = containerRef.current.clientHeight;
+    
+    // We always scroll to the specific index clicked to avoid confusion
+    containerRef.current.scrollTo({
+      top: idx * height,
       behavior: 'smooth'
     });
-    onChange(num);
   };
+
+  // --- 5. STYLES ---
+  const sizeStyles = size === 'sm' 
+    ? { width: '3.5rem', height: '3.5rem', fontSize: '1.5rem' }
+    : { width: '4.5rem', height: '4.5rem', fontSize: '2rem' };
+    
+  const neighborSize = size === 'sm' ? '1.1rem' : '1.25rem';
 
   return (
     <div
-      className={`
-        relative transition-all duration-200 transform flex-shrink-0
-        ${isActive ? 'scale-110' : 'scale-100'}
-        ${disabled ? 'opacity-50 pointer-events-none' : ''}
-      `}
-      style={{ width: '18vw', maxWidth: '4.5rem', minWidth: '3.5rem' }}
-      onMouseEnter={() => setIsActive(true)}
-      onMouseLeave={() => setIsActive(false)}
-      onTouchStart={() => setIsActive(true)}
-      onTouchEnd={() => setTimeout(() => setIsActive(false), 100)}
+      className={`relative flex-shrink-0 transition-transform duration-300 ${isInteracting ? 'scale-110 z-10' : 'scale-100 z-0'}`}
+      style={{ width: sizeStyles.width, height: sizeStyles.height }}
+      onMouseEnter={() => setIsInteracting(true)}
+      onMouseLeave={() => setIsInteracting(false)}
+      onTouchStart={() => setIsInteracting(true)}
+      onTouchEnd={() => setTimeout(() => setIsInteracting(false), 200)}
     >
-      {/* Outer Glow Ring */}
-      <div
-        className={`
-          absolute inset-[-4px] rounded-full pointer-events-none transition-all duration-300
-          ${isActive
-            ? 'bg-gradient-to-b from-primary/40 via-primary/20 to-transparent blur-md opacity-100'
-            : 'opacity-0'
-          }
-        `}
+      {/* GLOW EFFECT (Only visible when interacting) */}
+      <div 
+        className={`absolute inset-[-10px] rounded-full bg-primary/30 blur-xl transition-opacity duration-300 ${isInteracting ? 'opacity-100' : 'opacity-0'}`}
       />
 
-      {/* The Orb Container - Square aspect ratio with 3D depth */}
-      <div
-        ref={sphereRef}
+      {/* SPHERE CONTAINER */}
+      <div 
         className={`
-          w-full aspect-square rounded-full relative
-          bg-gradient-to-b from-slate-600 via-slate-800 to-slate-950
-          border-2 transition-all duration-300 overflow-hidden
-          ${isActive
-            ? 'border-primary shadow-[0_0_40px_rgba(250,204,20,0.7),_0_8px_32px_rgba(0,0,0,0.8),_inset_0_-12px_30px_rgba(0,0,0,0.9),_inset_0_6px_15px_rgba(255,255,255,0.15)]'
-            : 'border-slate-500/50 shadow-[0_8px_28px_rgba(0,0,0,0.6),_inset_0_-10px_25px_rgba(0,0,0,0.8),_inset_0_4px_12px_rgba(255,255,255,0.1)]'
-          }
+          w-full h-full rounded-full relative overflow-hidden
+          bg-gradient-to-b from-slate-700 via-slate-900 to-black
+          border-2 box-border transition-colors duration-300
+          ${isInteracting ? 'border-primary/60 shadow-[0_0_15px_rgba(250,204,20,0.5)]' : 'border-slate-600 shadow-inner'}
         `}
-        style={{
-          transform: isActive ? 'translateY(-3px)' : 'translateY(0)',
-        }}
       >
-        {/* 3D Outer Ring Effect */}
-        <div className="absolute inset-[-3px] rounded-full border border-slate-400/25 pointer-events-none" />
-
-        {/* Glass Highlight - Top Arc (3D Reflection) */}
-        <div className="absolute top-[3%] left-1/2 -translate-x-1/2 w-[65%] h-[18%] bg-gradient-to-b from-white/25 via-white/10 to-transparent rounded-full blur-[1px] pointer-events-none" />
-
-        {/* Secondary Highlight - Smaller Arc */}
-        <div className="absolute top-[8%] left-1/2 -translate-x-1/2 w-[45%] h-[10%] bg-gradient-to-b from-white/35 to-transparent rounded-full pointer-events-none" />
-
-        {/* Center Selection Indicator - Just thin border lines, no fill */}
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[35%] pointer-events-none z-10">
-          <div className={`h-full border-y transition-all duration-300 ${isActive ? 'border-primary/60' : 'border-primary/30'}`} />
-        </div>
-
-        {/* Scrollable Numbers Container */}
+        {/* GLASS HIGHLIGHTS (Static) */}
+        <div className="absolute top-0 inset-x-0 h-[40%] bg-gradient-to-b from-white/10 to-transparent rounded-t-full pointer-events-none z-20" />
+        <div className="absolute top-[10%] left-[15%] w-[70%] h-[20%] bg-white/5 blur-[2px] rounded-full pointer-events-none z-20" />
+        
+        {/* SCROLL VIEWPORT */}
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="absolute inset-0 overflow-y-scroll scrollbar-hide"
+          className="absolute inset-0 overflow-y-scroll overflow-x-hidden scrollbar-hide snap-y snap-mandatory"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
+            scrollBehavior: 'auto' // handled manually or by CSS snap
           }}
         >
-          {/* Top Spacer - Centers first item */}
-          <div style={{ height: '32.5%' }} />
+          {ALL_NUMBERS.map((num, idx) => {
+            const isActive = activeDigit === num;
+            
+            // Logic to determine if this specific node is the one currently highlighted
+            // This is purely for visual scaling, the Observer handles the actual value
+            const isVisualActive = isActive && 
+                                   idx >= MIDDLE_SET_OFFSET - 2 && 
+                                   idx <= MIDDLE_SET_OFFSET + ITEMS_PER_SET + 2; 
 
-          {/* Numbers (Looped for infinite scroll) */}
-          {LOOPED_NUMBERS.map((num, idx) => {
-            const isSelected = idx === LOOP_OFFSET + value;
             return (
               <div
-                key={idx}
-                onClick={() => scrollToNumber(num)}
-                className="flex items-center justify-center cursor-pointer select-none"
-                style={{ height: '35%' }}
+                key={`${idx}-${num}`}
+                data-index={idx}
+                data-value={num}
+                className="sphere-item w-full h-full flex items-center justify-center snap-center cursor-pointer select-none"
+                onClick={() => scrollToNumber(num, idx)}
               >
                 <span
                   className={`
                     font-mono font-bold transition-all duration-200
-                    ${isSelected
-                      ? 'text-primary text-[clamp(1.5rem,5vw,2rem)] drop-shadow-[0_0_15px_rgba(250,204,20,0.95)]'
-                      : 'text-slate-400 text-[clamp(0.85rem,3vw,1.1rem)]'
-                    }
+                    ${activeDigit === num ? 'text-primary scale-110' : 'text-slate-500 scale-75'}
                   `}
+                  style={{
+                    fontSize: activeDigit === num ? sizeStyles.fontSize : neighborSize,
+                    textShadow: activeDigit === num ? '0 0 15px rgba(250,204,20,0.8)' : 'none',
+                    opacity: activeDigit === num ? 1 : 0.4
+                  }}
                 >
                   {num}
                 </span>
               </div>
             );
           })}
-
-          {/* Bottom Spacer - Centers last item */}
-          <div style={{ height: '32.5%' }} />
         </div>
 
-        {/* Top Fade - Lighter for visibility */}
-        <div className="absolute top-0 inset-x-0 h-[20%] bg-gradient-to-b from-slate-700/80 via-slate-800/40 to-transparent pointer-events-none rounded-t-full" />
-
-        {/* Bottom Fade - Lighter for visibility */}
-        <div className="absolute bottom-0 inset-x-0 h-[20%] bg-gradient-to-t from-slate-900/80 via-slate-800/40 to-transparent pointer-events-none rounded-b-full" />
-
-        {/* Inner Glass Rim Effect - 3D Edge */}
-        <div className="absolute inset-0 rounded-full pointer-events-none border border-white/[0.1] shadow-[inset_0_1px_3px_rgba(255,255,255,0.12)]" />
-
-        {/* Bottom Reflection Curve */}
-        <div className="absolute bottom-[12%] left-1/2 -translate-x-1/2 w-[55%] h-[8%] bg-gradient-to-t from-white/8 to-transparent rounded-full blur-[2px] pointer-events-none" />
+        {/* GRADIENT MASKS (To hide top/bottom edges) */}
+        <div className="absolute top-0 inset-x-0 h-[25%] bg-gradient-to-b from-slate-900 via-slate-900/80 to-transparent pointer-events-none z-10" />
+        <div className="absolute bottom-0 inset-x-0 h-[25%] bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent pointer-events-none z-10" />
       </div>
     </div>
   );
 };
 
-function HoloSphereInput({ length = 4, value = '', onChange, disabled = false }) {
-  // Initialize digits array from value or zeros
-  const [digits, setDigits] = useState(() => {
-    const initial = [];
-    for (let i = 0; i < length; i++) {
-      initial.push(value[i] ? parseInt(value[i]) : 0);
-    }
-    return initial;
-  });
+// Main Input Component
+function HoloSphereInput({ length = 3, value = '', onChange, disabled = false, size = 'md' }) {
+  // Ensure we have an array of correct length
+  const digits = Array.from({ length }, (_, i) => value[i] ? parseInt(value[i]) : 0);
 
-  // Update parent when digits change
-  useEffect(() => {
-    const newValue = digits.join('');
-    if (newValue !== value) {
-      onChange(newValue);
-    }
-  }, [digits, onChange, value]);
-
-  // Handle individual digit change
   const handleDigitChange = (index, newDigit) => {
-    setDigits(prev => {
-      const updated = [...prev];
-      updated[index] = newDigit;
-      return updated;
-    });
+    const newDigits = [...digits];
+    newDigits[index] = newDigit;
+    onChange(newDigits.join(''));
   };
 
-  // Reset when length changes
-  useEffect(() => {
-    setDigits(Array(length).fill(0));
-  }, [length]);
-
   return (
-    <div className="flex justify-center items-center w-full py-2" style={{ gap: '4%' }}>
-      {/* Holo-Spheres with enhanced spacing */}
+    <div className="flex gap-3 sm:gap-4 md:gap-6 justify-center items-center p-4">
       {digits.map((digit, index) => (
         <HoloSphere
           key={index}
           value={digit}
-          onChange={(newDigit) => handleDigitChange(index, newDigit)}
+          onChange={(val) => handleDigitChange(index, val)}
           disabled={disabled}
+          size={size}
         />
       ))}
     </div>

@@ -20,7 +20,7 @@ const HandoverStep = ({ onReady }) => {
           PASS THE DEVICE
         </h2>
         <p className="text-slate-400 text-center mb-12">
-          Hand the phone to <span className="text-primary font-semibold">Player 2</span>
+          Hand the Device to <span className="text-primary font-semibold">Player 2</span>
         </p>
 
         <button

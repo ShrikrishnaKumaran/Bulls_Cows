@@ -131,7 +131,7 @@ function HomePage() {
         <div className="mt-auto pt-8 pb-4 px-4 flex justify-between items-end opacity-20">
           <div className="h-16 w-16 border-l-2 border-b-2 border-white rounded-bl-xl"></div>
           <div className="font-mono text-[10px] text-center text-white">
-            SYSTEM READY<br/>V2.0.0
+            SYSTEM READY<br/>THINK • DEDUCE • CONQUER
           </div>
           <div className="h-16 w-16 border-r-2 border-b-2 border-white rounded-br-xl"></div>
         </div>

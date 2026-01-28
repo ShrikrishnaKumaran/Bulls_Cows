@@ -89,19 +89,19 @@ const ConfigStep = ({
             <div className="grid grid-cols-3 gap-3">
               <TechTile
                 icon={<TrophyIcon />}
-                label="1 Round"
+                label="BEST OF 1"
                 selected={config.format === 1}
                 onClick={() => onConfigChange('format', 1)}
               />
               <TechTile
                 icon={<TrophyIcon />}
-                label="BO3"
+                label="Best of 3"
                 selected={config.format === 3}
                 onClick={() => onConfigChange('format', 3)}
               />
               <TechTile
                 icon={<TrophyIcon />}
-                label="BO5"
+                label="Best of 5"
                 selected={config.format === 5}
                 onClick={() => onConfigChange('format', 5)}
               />
@@ -131,7 +131,7 @@ const ConfigStep = ({
                 <span className="text-white">
                   {config.format === 1 ? 'SINGLE MATCH' : `BEST OF ${config.format}`}
                 </span>
-                {config.format > 1 && ` (First to ${Math.ceil(config.format / 2)})`}
+                {config.format > 1 && ` (Race to ${Math.ceil(config.format / 2)} wins)`}
               </p>
             </div>
             <div className="text-primary/40 mt-2">{`> READY_FOR_DEPLOYMENT...`}</div>

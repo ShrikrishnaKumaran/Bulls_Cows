@@ -140,7 +140,7 @@ export function TechFooter() {
         <div className="flex items-center gap-2 text-xs text-slate-500 uppercase tracking-wider">
           <span className="text-green-500">●</span>
           <span>Secure Connection</span>
-          <span className="text-primary">◆</span>
+          <span className="text-green-500">●</span>
         </div>
       </div>
     </div>
