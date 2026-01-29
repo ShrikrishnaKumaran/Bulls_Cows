@@ -107,17 +107,24 @@ export default function AuthPage() {
         response = await axios.post(`${API_URL}/auth/login`, {
           email: formData.email,
           password: formData.password,
-        });
+        }, { withCredentials: true });
       } else {
         response = await axios.post(`${API_URL}/auth/register`, {
           username: formData.username,
           email: formData.email,
           password: formData.password,
-        });
+        }, { withCredentials: true });
       }
 
-      const { token } = response.data;
-      localStorage.setItem('token', token);
+      // Backend returns accessToken, not token
+      const { accessToken } = response.data;
+      
+      // Validate token before storing
+      if (!accessToken || !accessToken.startsWith('eyJ')) {
+        throw new Error('Invalid token received from server');
+      }
+      
+      localStorage.setItem('token', accessToken);
 
       addToast('Welcome to the Arena! 🎮', 'success');
 

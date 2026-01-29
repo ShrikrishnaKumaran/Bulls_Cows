@@ -1,4 +1,5 @@
 ﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 
 // Pages - Auth
 import AuthPage from './pages/auth/AuthPage'
@@ -22,11 +23,20 @@ import OnlineGamePage from './pages/online/GamePage'
 // UI Components
 import ToastContainer from './components/ui/ToastContainer'
 
-// Protected Route Component
+// Store
+import useAuthStore from './store/useAuthStore'
+
+// Protected Route Component - Only checks localStorage directly to avoid hydration issues
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('token')
+  // Always check localStorage directly - it's synchronous and reliable
+  const localToken = localStorage.getItem('token')
   
-  if (!token) {
+  // Validate token - must exist and be a proper JWT format
+  if (!localToken || localToken === 'undefined' || localToken === 'null' || !localToken.startsWith('eyJ')) {
+    // Clean up invalid tokens
+    if (localToken === 'undefined' || localToken === 'null') {
+      localStorage.removeItem('token')
+    }
     return <Navigate to="/auth" replace />
   }
   
@@ -34,6 +44,24 @@ const ProtectedRoute = ({ children }) => {
 }
 
 function App() {
+  const { initialize } = useAuthStore()
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  useEffect(() => {
+    // Initialize auth state on app start
+    initialize()
+    setIsInitialized(true)
+  }, [initialize])
+
+  // Show nothing while initializing to prevent flash
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-[#111827] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    )
+  }
+
   return (
     <BrowserRouter>
       {/* Global Toast Notifications */}

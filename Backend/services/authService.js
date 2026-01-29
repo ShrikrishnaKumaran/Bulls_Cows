@@ -60,6 +60,7 @@ const register = async (userData, device = null, ipAddress = null) => {
     
     return {
       _id: user._id,
+      uid: user.uid,
       username: user.username,
       email: user.email,
       accessToken,
@@ -83,6 +84,7 @@ const login = async (credentials, device = null, ipAddress = null) => {
     
     return {
       _id: user._id,
+      uid: user.uid,
       username: user.username,
       email: user.email,
       accessToken,

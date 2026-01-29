@@ -17,17 +17,17 @@ const useAuthStore = create(
         set({ loading: true, error: null });
         try {
           const response = await api.post('/auth/register', userData);
-          const { token, ...user } = response.data;
+          const { accessToken, ...user } = response.data;
 
-          localStorage.setItem('token', token);
+          localStorage.setItem('token', accessToken);
           
           // Initialize socket with token
-          initializeSocket(token);
+          initializeSocket(accessToken);
           connectSocket();
 
           set({
             user,
-            token,
+            token: accessToken,
             isAuthenticated: true,
             loading: false,
           });
@@ -45,17 +45,22 @@ const useAuthStore = create(
         set({ loading: true, error: null });
         try {
           const response = await api.post('/auth/login', credentials);
-          const { token, ...user } = response.data;
+          const { accessToken, ...user } = response.data;
 
-          localStorage.setItem('token', token);
+          // Validate token before storing
+          if (!accessToken || typeof accessToken !== 'string' || !accessToken.startsWith('eyJ')) {
+            throw new Error('Invalid token received from server');
+          }
+          
+          localStorage.setItem('token', accessToken);
           
           // Initialize socket with token
-          initializeSocket(token);
+          initializeSocket(accessToken);
           connectSocket();
 
           set({
             user,
-            token,
+            token: accessToken,
             isAuthenticated: true,
             loading: false,
           });
@@ -96,12 +101,114 @@ const useAuthStore = create(
 
       // Clear error
       clearError: () => set({ error: null }),
+
+      // Initialize auth state from localStorage
+      initialize: () => {
+        const token = localStorage.getItem('token');
+        if (token) {
+          set({
+            token,
+            isAuthenticated: true,
+          });
+          // Initialize socket if token exists
+          try {
+            initializeSocket(token);
+            connectSocket();
+          } catch (error) {
+            console.error('Failed to initialize socket:', error);
+          }
+        }
+      },
+
+      // ═══════════════════════════════════════════════════════════
+      // FRIEND SYSTEM ACTIONS
+      // ═══════════════════════════════════════════════════════════
+
+      // Search users by username or UID
+      searchUsers: async (query) => {
+        try {
+          const response = await api.get(`/friends/search?q=${encodeURIComponent(query)}`);
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response?.data?.message || 'Search failed');
+        }
+      },
+
+      // Get friends list
+      getFriends: async () => {
+        try {
+          const response = await api.get('/friends');
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response?.data?.message || 'Failed to fetch friends');
+        }
+      },
+
+      // Get pending friend requests
+      getPendingRequests: async () => {
+        try {
+          const response = await api.get('/friends/requests');
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response?.data?.message || 'Failed to fetch requests');
+        }
+      },
+
+      // Send friend request
+      sendFriendRequest: async (targetUid) => {
+        try {
+          const response = await api.post('/friends/request', { targetUid });
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response?.data?.message || 'Failed to send request');
+        }
+      },
+
+      // Accept friend request
+      acceptFriendRequest: async (requesterId) => {
+        try {
+          const response = await api.post('/friends/accept', { requesterId });
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response?.data?.message || 'Failed to accept request');
+        }
+      },
+
+      // Reject friend request
+      rejectFriendRequest: async (requesterId) => {
+        try {
+          const response = await api.post('/friends/reject', { requesterId });
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response?.data?.message || 'Failed to reject request');
+        }
+      },
+
+      // Remove friend
+      removeFriend: async (friendId) => {
+        try {
+          const response = await api.delete(`/friends/${friendId}`);
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response?.data?.message || 'Failed to remove friend');
+        }
+      },
+
+      // Get user by UID
+      getUserByUid: async (uid) => {
+        try {
+          const response = await api.get(`/friends/user/${encodeURIComponent(uid)}`);
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response?.data?.message || 'User not found');
+        }
+      },
     }),
     {
       name: 'auth-storage',
+      // Only persist user data, NOT the token (token is stored directly in localStorage)
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
     }

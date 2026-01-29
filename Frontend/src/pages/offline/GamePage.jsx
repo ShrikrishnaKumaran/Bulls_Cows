@@ -96,8 +96,9 @@ function OfflineGamePage() {
   // Handle back button during game
   const handleBack = useCallback(() => {
     resetGame();
+    resetSetup();
     navigate(ROUTES.HOME);
-  }, [resetGame, navigate]);
+  }, [resetGame, resetSetup, navigate]);
 
   // Handle continue to next round
   const handleContinueRound = useCallback(() => {

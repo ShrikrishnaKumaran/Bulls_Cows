@@ -3,13 +3,13 @@
  * 
  * Used for both Step 2 (Player 1) and Step 4 (Player 2).
  * Secure Vault Interface with:
- * - CyberDrumInput for digit selection
+ * - HoloSphereInput for digit selection
  * - Mission Summary HUD
- * - Validation status display
+ * - Unified "Hardware Unit" design
  */
 import { useMemo } from 'react';
 import SetupStepper from './SetupStepper';
-import CyberDrumInput from '../ui/CyberDrumInput';
+import HoloSphereInput from '../ui/HoloSphereInput';
 import { BackIcon, LockIcon } from './SetupIcons';
 
 // Icons for summary panel
@@ -93,98 +93,83 @@ const SecretEntryStep = ({
         <SetupStepper currentStep={stepNumber} />
 
         <main className="flex-1 flex flex-col justify-center py-2">
-          {/* Secure Vault Header - Compact */}
-          <div className="text-center mb-4">
-            <div className={`w-12 h-12 mx-auto mb-3 rounded-xl ${accentBg} border ${accentBorder} flex items-center justify-center ${accentText}`}>
-              <LockIcon />
-            </div>
-            <h2 className="text-lg font-bold text-white uppercase tracking-widest mb-1">
-              Secure Your Data
-            </h2>
-            <p className="text-slate-400 text-xs">
-              Agent {playerNumber}, initialize your secret sequence
-            </p>
-          </div>
-
-          {/* Mission Summary HUD */}
-          <div className="bg-surface-dark/50 border border-slate-700/50 rounded-lg p-3 mb-4 text-xs font-mono">
-            <div className="flex justify-between items-center mb-2">
-              <div className="flex items-center gap-1.5">
-                <Hash size={14} className="text-slate-500" />
-                <span className="text-slate-400">TARGET:</span>{' '}
-                <span className="text-primary">{config.digits}-DIGIT</span>
+          {/* The Master Container - Single Unified Panel */}
+          <div className="w-full max-w-sm mx-auto bg-[#1f2937] border border-slate-700 rounded-3xl overflow-hidden shadow-2xl">
+            
+            {/* Section 1: The Header (Mission Briefing) */}
+            <div className="bg-slate-800 p-6 border-b border-white/5">
+              <div className="text-white font-bold uppercase tracking-widest text-sm mb-4">
+                Agent {playerNumber}, Enter Your Number
               </div>
-              <div className="flex items-center gap-1.5">
-                <Trophy size={14} className="text-slate-500" />
-                <span className="text-slate-400">PROTOCOL:</span>{' '}
-                <span className="text-white">{config.format === 1 ? 'SINGLE' : `BO${config.format}`}</span>
+              <div className="text-xs font-mono">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Hash size={14} className="text-slate-500" />
+                    <span className="text-slate-400">TARGET:</span>{' '}
+                    <span className="text-primary">{config.digits}-DIGIT</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Trophy size={14} className="text-slate-500" />
+                    <span className="text-slate-400">PROTOCOL:</span>{' '}
+                    <span className="text-white">{config.format === 1 ? 'SINGLE' : `BO${config.format}`}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-slate-700/30">
+                  <Timer size={14} className={config.difficulty === 'Easy' ? 'text-green-400' : 'text-red-400'} />
+                  <span className={config.difficulty === 'Easy' ? 'text-green-400' : 'text-red-400'}>
+                    {config.difficulty === 'Easy' 
+                      ? 'NO TIMER • FULL HISTORY' 
+                      : '30s TIMER • LAST 5 GUESSES ONLY'}
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-slate-700/30">
-              <Timer size={14} className={config.difficulty === 'Easy' ? 'text-green-400' : 'text-red-400'} />
-              <span className={config.difficulty === 'Easy' ? 'text-green-400' : 'text-red-400'}>
-                {config.difficulty === 'Easy' 
-                  ? 'NO TIMER • FULL HISTORY' 
-                  : '30s TIMER • LAST 5 GUESSES ONLY'}
-              </span>
+
+            {/* Section 2: The Body (Input) */}
+            <div className="bg-[#111827] p-6">
+              <div className="text-center text-slate-500 text-[10px] font-mono tracking-widest mb-4">
+                SET SECURITY CODE
+              </div>
+              <HoloSphereInput
+                length={config.digits}
+                onChange={onSecretChange}
+                value={currentSecret}
+              />
             </div>
-          </div>
 
-          {/* Drum Input Container - Vault Style */}
-          <div className="border-2 border-dashed border-slate-700/50 p-4 rounded-2xl bg-black/30 mb-4 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
-            <CyberDrumInput
-              length={config.digits}
-              value={currentSecret}
-              onChange={onSecretChange}
-            />
-          </div>
-
-          {/* Status Line - Sleek Terminal Style */}
-          <div className="flex items-center justify-center gap-2 mb-4 font-mono text-xs">
-            {hasDuplicates ? (
-              <>
-                <span className="text-red-500 animate-pulse">⚠</span>
-                <span className="text-red-400 tracking-widest">ERR: DUPLICATE_DIGITS_DETECTED</span>
-              </>
-            ) : isValidSecret ? (
-              <>
-                <span className="text-green-400">✓</span>
-                <span className="text-green-400 tracking-widest">SEQ: VALIDATED</span>
-              </>
-            ) : (
-              <>
-                <span className="text-slate-500">○</span>
-                <span className="text-slate-500 tracking-widest">AWAITING_INPUT...</span>
-              </>
+            {/* Error Display (Integrated Red Pulse Bar) */}
+            {(hasDuplicates || error) && (
+              <div className="bg-red-500/10 text-red-400 text-xs font-mono py-2 text-center border-t border-red-500/20">
+                {hasDuplicates ? 'ERR: DUPLICATE_DIGITS_DETECTED' : error}
+              </div>
             )}
+
+            {/* Section 3: The Footer (Button) */}
+            <button
+              onClick={onSubmit}
+              disabled={!isValidSecret || error}
+              className={`
+                w-full py-4 font-bold uppercase tracking-widest transition-all
+                ${isValidSecret && !error && !hasDuplicates
+                  ? 'bg-primary hover:bg-yellow-400 text-black'
+                  : 'bg-slate-800 text-slate-500'
+                }
+              `}
+            >
+              ENCRYPT & LOCK IN
+            </button>
           </div>
 
-          {error && (
-            <div className="flex justify-center mb-3">
-              <div className="bg-red-500/10 border border-red-500/20 rounded-full px-4 py-1 inline-flex items-center gap-2">
-                <span className="text-red-400 animate-pulse">⚠</span>
-                <span className="text-red-400 text-xs font-mono">{error}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Action Button - Solid Neon */}
-          <button
-            onClick={onSubmit}
-            disabled={!isValidSecret || error}
-            className={`
-              w-full py-4 rounded-xl font-bold text-sm uppercase tracking-[0.2em]
-              transition-all duration-200 active:scale-[0.98]
-              ${isValidSecret && !error
-                ? 'bg-primary text-black shadow-[0_0_25px_rgba(250,204,20,0.4)] hover:shadow-[0_0_35px_rgba(250,204,20,0.6)] hover:translate-y-[-2px]'
-                : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
-              }
-              ${error ? 'opacity-50' : ''}
-            `}
-          >
-            {isPlayer1 ? '🔒 Encrypt & Lock In' : '🎮 Encrypt & Start Game'}
-          </button>
         </main>
+
+        {/* Tech Border Footer */}
+        <div className="mt-auto pt-6 pb-4 px-4 flex justify-between items-end">
+          <div className="h-14 w-14 border-l-2 border-b-2 border-white/20 rounded-bl-xl"></div>
+          <div className="font-mono text-[10px] text-center text-primary/60 pb-2">
+            TIP: Avoid predictable sequences to keep your number challenging
+          </div>
+          <div className="h-14 w-14 border-r-2 border-b-2 border-white/20 rounded-br-xl"></div>
+        </div>
       </div>
     </div>
   );

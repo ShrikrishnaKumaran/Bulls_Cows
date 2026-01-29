@@ -18,7 +18,7 @@ const getIpAddress = (req) => {
 const getCookieOptions = () => ({
   httpOnly: true, // Prevents XSS attacks by restricting access to the cookie from JavaScript and only allowing server-side access
   secure: process.env.NODE_ENV === 'production', // HTTPS only in production 
-  sameSite: 'strict', // CSRF protection no extrnal requests are allowed to get the cookie only same site requests
+  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // Use 'lax' in development for cross-port requests
   maxAge: 30 * 24 * 60 * 60 * 1000, // after 30 days the cookie will expire and user needs to login again
 });
 
@@ -38,6 +38,7 @@ const register = async (req, res) => {
     // Send access token in response body
     res.status(201).json({
       _id: userData._id,
+      uid: userData.uid,
       username: userData.username,
       email: userData.email,
       accessToken: userData.accessToken,
@@ -69,6 +70,7 @@ const login = async (req, res) => {
     // Send access token in response body
     res.status(200).json({
       _id: userData._id,
+      uid: userData.uid,
       username: userData.username,
       email: userData.email,
       accessToken: userData.accessToken,

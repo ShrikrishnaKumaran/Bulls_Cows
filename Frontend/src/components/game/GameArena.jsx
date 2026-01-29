@@ -117,12 +117,24 @@ function GameArena({
   return (
     <div className="fixed inset-0 bg-background-dark font-space flex flex-col">
       {/* Scanlines Overlay */}
-      <div className="scanlines" />
+      <div className="scanlines pointer-events-none" />
 
       {/* Background Decorations */}
       <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-primary/3 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+
+      {/* Back Button - Top Left */}
+      <button
+        onClick={() => setShowQuitConfirm(true)}
+        className="absolute top-4 left-4 z-50 bg-white/10 p-3 rounded-full backdrop-blur-sm hover:bg-white/20 transition-all text-white border border-white/20 shadow-lg"
+        aria-label="Quit game"
+        style={{ pointerEvents: 'auto' }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+      </button>
 
       <div className="w-full max-w-lg mx-auto h-full flex flex-col relative z-10">
 
@@ -199,34 +211,38 @@ function GameArena({
           />
         </footer>
       </div>
+      
       {/* Quit Confirmation Modal */}
       {showQuitConfirm && (
-        <Modal onClose={() => setShowQuitConfirm(false)}>
-          <div className="text-center">
-            <h3 className="text-2xl font-bold text-white mb-4">Quit Game?</h3>
-            <p className="text-slate-400 mb-6">
-              Are you sure you want to quit? All progress will be lost.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowQuitConfirm(false)}
-                className="flex-1 py-3 rounded-xl bg-surface-dark/80 backdrop-blur-sm text-slate-300 font-semibold border border-slate-600/50 hover:bg-slate-700 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowQuitConfirm(false);
-                  onBack();
-                }}
-                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-all"
-              >
-                Quit
-              </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100]">
+          <div className="bg-slate-800 p-6 rounded-xl border border-slate-600 max-w-sm w-full mx-4">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-white mb-4">Quit Game?</h3>
+              <p className="text-slate-400 mb-6">
+                Are you sure you want to quit? All progress will be lost.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowQuitConfirm(false)}
+                  className="flex-1 py-3 rounded-xl bg-slate-700 text-slate-300 font-semibold hover:bg-slate-600 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowQuitConfirm(false);
+                    onBack();
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-all"
+                >
+                  Quit
+                </button>
+              </div>
             </div>
           </div>
-        </Modal>
-      )}    </div>
+        </div>
+      )}
+    </div>
   );
 }
 

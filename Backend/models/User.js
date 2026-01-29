@@ -1,6 +1,19 @@
 ﻿const mongoose = require('mongoose');
 
+// Generate a short, readable UID (e.g., #9921)
+const generateUID = () => {
+  const num = Math.floor(1000 + Math.random() * 9000); // 4-digit number
+  return `#${num}`;
+};
+
 const userSchema = new mongoose.Schema({
+  uid: {
+    type: String,
+    unique: true,
+    required: true,
+    default: generateUID
+  },
+
   username: {
     type: String,
     required: [true, 'Please provide a username'],
@@ -46,14 +59,96 @@ const userSchema = new mongoose.Schema({
       default: 0
     }
   },
+
+  // Friend System
   friends: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+
+  friendRequests: {
+    incoming: [{
+      from: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      status: {
+        type: String,
+        enum: ['pending'],
+        default: 'pending'
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
+    outgoing: [{
+      to: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      },
+      status: {
+        type: String,
+        enum: ['pending'],
+        default: 'pending'
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      }
+    }]
+  },
+
+  // Match History for profile display
+  matchHistory: [{
+    opponent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    opponentName: String,
+    result: {
+      type: String,
+      enum: ['win', 'loss', 'draw']
+    },
+    score: String, // e.g., "3-1"
+    format: Number, // Best of 1, 3, 5
+    playedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+
   isOnline: {
     type: Boolean,
     default: false
   }
+}, {
+  timestamps: true
+});
+
+// Ensure UID is unique - retry if collision
+userSchema.pre('save', async function(next) {
+  // Only generate UID for new users OR if UID is missing
+  if (this.isNew || !this.uid) {
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (!isUnique && attempts < maxAttempts) {
+      this.uid = generateUID();
+      const existingUser = await mongoose.model('User').findOne({ uid: this.uid });
+      if (!existingUser) {
+        isUnique = true;
+      } else {
+        attempts++;
+      }
+    }
+    
+    if (!isUnique) {
+      return next(new Error('Could not generate unique UID'));
+    }
+  }
+  next();
 });
 
 module.exports = mongoose.model('User', userSchema);

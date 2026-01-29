@@ -37,6 +37,7 @@ if (process.env.NODE_ENV === 'development') {
 // Routes
 app.use('/api/auth', require('./routes/auth'));//look on auth.js route file when route starts with /api/auth
 app.use('/api/matches', require('./routes/match'));//look on match.js route file when route starts with /api/matches
+app.use('/api/friends', require('./routes/friends'));//look on friends.js route file when route starts with /api/friends
 
 // Health check
 app.get('/health', (req, res) => {
