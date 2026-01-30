@@ -18,7 +18,11 @@ import {
 } from './AuthComponents';
 import useToastStore from '../../store/useToastStore';
 
-const API_URL = '/api';
+// Production backend URL (fallback when env vars not set)
+const PROD_BACKEND_URL = 'https://bulls-cows-backend.onrender.com';
+const isProd = import.meta.env.PROD;
+const baseUrl = import.meta.env.VITE_API_URL || (isProd ? PROD_BACKEND_URL : '');
+const API_URL = baseUrl ? `${baseUrl}/api` : '/api';
 
 export default function AuthPage() {
   const navigate = useNavigate();
