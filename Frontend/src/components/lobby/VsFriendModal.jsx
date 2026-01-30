@@ -7,6 +7,7 @@
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import useOnlineGameStore from '../../store/useOnlineGameStore';
 
 // Close Icon
 const CloseIcon = () => (
@@ -19,6 +20,10 @@ function VsFriendModal({ onClose }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('matchCode');
   const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [error, setError] = useState('');
+  
+  const { joinRoom, setupListeners, removeListeners, resetState } = useOnlineGameStore();
 
   const handleGenerateCode = async () => {
     const token = localStorage.getItem('token');
@@ -41,31 +46,29 @@ function VsFriendModal({ onClose }) {
       return;
     }
 
-    if (!joinCodeInput.trim()) {
-      alert('Please enter a room code');
+    if (!joinCodeInput.trim() || joinCodeInput.length !== 4) {
+      setError('Please enter a valid 4-character room code');
       return;
     }
 
-    try {
-      const response = await fetch('/api/matches/join', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ roomCode: joinCodeInput.toUpperCase() })
-      });
+    setJoining(true);
+    setError('');
+    
+    // Reset state and setup listeners before joining
+    resetState();
+    setupListeners();
 
-      const data = await response.json();
-      if (data.success) {
-        navigate(`/lobby/room/${joinCodeInput.toUpperCase()}`);
+    // Use socket-based join via the store
+    joinRoom(joinCodeInput.toUpperCase(), (response) => {
+      setJoining(false);
+      if (response.success) {
         onClose();
+        navigate(`/lobby/room/${joinCodeInput.toUpperCase()}`);
       } else {
-        alert('Failed to join room: ' + data.message);
+        setError(response.message || 'Failed to join room');
+        removeListeners();
       }
-    } catch (error) {
-      alert('Error joining room. Please try again.');
-    }
+    });
   };
 
   return (
@@ -114,6 +117,13 @@ function VsFriendModal({ onClose }) {
         <div className="p-6">
           {activeTab === 'matchCode' && (
             <div className="space-y-6">
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl text-sm">
+                  {error}
+                </div>
+              )}
+
               {/* Create Room Section */}
               <div className="bg-[#111827] rounded-xl p-4 border border-slate-700">
                 <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wider">
@@ -136,20 +146,23 @@ function VsFriendModal({ onClose }) {
                   type="text"
                   placeholder="Enter Room Code"
                   value={joinCodeInput}
-                  onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    setJoinCodeInput(e.target.value.toUpperCase());
+                    setError('');
+                  }}
                   maxLength={4}
                   className="w-full bg-slate-800 border border-slate-600 rounded-lg py-3 px-4 text-white text-center text-xl font-mono tracking-widest uppercase placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary mb-3"
                 />
                 <button
                   onClick={handleJoinRoom}
-                  disabled={!joinCodeInput.trim()}
+                  disabled={!joinCodeInput.trim() || joining}
                   className={`w-full py-3 rounded-lg font-semibold transition-all
-                    ${!joinCodeInput.trim()
+                    ${!joinCodeInput.trim() || joining
                       ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
                       : 'bg-blue-500 text-white hover:bg-blue-400'
                     }`}
                 >
-                  Join Room
+                  {joining ? 'Joining...' : 'Join Room'}
                 </button>
               </div>
             </div>
