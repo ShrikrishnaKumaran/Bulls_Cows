@@ -1,8 +1,12 @@
 import axios from 'axios';
 
-// In production: VITE_API_URL = https://backend.onrender.com (we append /api)
-// In development: Use relative URL '/api' so Vite proxy handles it
-const baseUrl = import.meta.env.VITE_API_URL;
+// Production backend URL (fallback when env vars not set)
+const PROD_BACKEND_URL = 'https://bulls-cows-backend.onrender.com';
+
+// In production: Use VITE_API_URL or fallback to production URL
+// In development: Use '/api' so Vite proxy handles it
+const isProd = import.meta.env.PROD;
+const baseUrl = import.meta.env.VITE_API_URL || (isProd ? PROD_BACKEND_URL : '');
 const API_URL = baseUrl ? `${baseUrl}/api` : '/api';
 
 const api = axios.create({

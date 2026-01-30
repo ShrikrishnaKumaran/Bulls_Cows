@@ -1,6 +1,12 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '';
+// Production backend URL (fallback when env vars not set)
+const PROD_BACKEND_URL = 'https://bulls-cows-backend.onrender.com';
+
+// In production: Use VITE_SOCKET_URL or fallback to production URL
+// In development: Use '' (empty) for same-origin
+const isProd = import.meta.env.PROD;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (isProd ? PROD_BACKEND_URL : '');
 
 let socket = null;
 
