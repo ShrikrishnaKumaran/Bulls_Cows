@@ -1,20 +1,72 @@
+/**
+ * ============================================================
+ * Socket Manager - WebSocket Server Configuration
+ * ============================================================
+ * 
+ * Manages Socket.io server initialization and authentication:
+ * - CORS configuration for frontend communication
+ * - JWT-based authentication middleware
+ * - User-socket mapping for targeted messaging
+ * - Handler registration (lobby, game)
+ * 
+ * Exports:
+ * - initializeSocket(server): Start the WebSocket server
+ * - getIO(): Get the Socket.io instance
+ * - getUserSocketId(userId): Get socket ID for a user
+ * - getActiveGames(): Get active games storage
+ */
+
 const socketIO = require('socket.io');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const lobbyHandler = require('./lobbyHandler');
+const gameHandler = require('./gameHandler');
 
+// Socket.io server instance
 let io;
 
+// Map: oderId (string) -> socketId (string)
+// Used for sending targeted messages to specific users
+const userSockets = new Map();
+
+// Active games storage (in-memory for low latency)
+// Structure: { roomCode: gameState }
+const activeGames = {};
+
+/**
+ * Initialize Socket.io server with authentication
+ * @param {http.Server} server - HTTP server instance
+ * @returns {SocketIO.Server} Socket.io server instance
+ */
 const initializeSocket = (server) => {
   io = socketIO(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: function(origin, callback) {
+        // Allow requests with no origin
+        if (!origin) return callback(null, true);
+        
+        // In development, allow all origins
+        if (process.env.NODE_ENV === 'development') {
+          return callback(null, true);
+        }
+        
+        // In production, check against FRONTEND_URL
+        const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+        if (origin === allowedOrigin) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       methods: ['GET', 'POST'],
       credentials: true,
     },
   });
 
-  // Authentication middleware for socket connections
+  // ─────────────────────────────────────────────────────────────
+  // Authentication Middleware
+  // Validates JWT before allowing socket connection
+  // ─────────────────────────────────────────────────────────────
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;
@@ -30,6 +82,7 @@ const initializeSocket = (server) => {
         return next(new Error('Authentication error: User not found'));
       }
 
+      // Attach user to socket for use in handlers
       socket.user = user;
       next();
     } catch (error) {
@@ -37,22 +90,35 @@ const initializeSocket = (server) => {
     }
   });
 
-  // Connection event
+  // ─────────────────────────────────────────────────────────────
+  // Connection Handler
+  // ─────────────────────────────────────────────────────────────
   io.on('connection', (socket) => {
-    console.log(`User connected: ${socket.user.username} (${socket.id})`);
+    const oderId = socket.user._id.toString();
+    
+    // Track user's socket connection
+    userSockets.set(oderId, socket.id);
+    console.log(`[Socket] User ${socket.user.username} connected (ID: ${socket.id})`);
 
-    // Register lobby handlers
-    lobbyHandler(io, socket);
+    // Register event handlers
+    lobbyHandler(io, socket, activeGames, getUserSocketId);
+    gameHandler(io, socket, activeGames);
 
-    // Disconnect event
+    // Handle disconnection
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${socket.user.username} (${socket.id})`);
+      userSockets.delete(oderId);
+      console.log(`[Socket] User ${socket.user.username} disconnected`);
     });
   });
 
   return io;
 };
 
+/**
+ * Get the Socket.io server instance
+ * @returns {SocketIO.Server}
+ * @throws {Error} If socket not initialized
+ */
 const getIO = () => {
   if (!io) {
     throw new Error('Socket.io not initialized');
@@ -60,7 +126,26 @@ const getIO = () => {
   return io;
 };
 
+/**
+ * Get socket ID for a specific user
+ * @param {string} oderId - User ID
+ * @returns {string|undefined} Socket ID or undefined if user offline
+ */
+const getUserSocketId = (oderId) => {
+  return userSockets.get(oderId.toString());
+};
+
+/**
+ * Get active games storage
+ * @returns {Object} Active games object
+ */
+const getActiveGames = () => {
+  return activeGames;
+};
+
 module.exports = {
   initializeSocket,
   getIO,
+  getUserSocketId,
+  getActiveGames,
 };

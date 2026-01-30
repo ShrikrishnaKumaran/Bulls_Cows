@@ -3,7 +3,7 @@
 // Generate access token (short-lived)
 const generateAccessToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_ACCESS_EXPIRE || '15m',
+    expiresIn: process.env.JWT_ACCESS_EXPIRE || '7d', // Extended for development
   });
 };
 

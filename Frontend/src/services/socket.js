@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '';
 
 let socket = null;
 
@@ -17,15 +17,15 @@ export const initializeSocket = (token) => {
   });
 
   socket.on('connect', () => {
-    console.log('Socket connected:', socket.id);
+    // Connected
   });
 
   socket.on('disconnect', () => {
-    console.log('Socket disconnected');
+    // Disconnected
   });
 
   socket.on('connect_error', (error) => {
-    console.error('Socket connection error:', error);
+    // Handle error silently or use proper error handling
   });
 
   return socket;

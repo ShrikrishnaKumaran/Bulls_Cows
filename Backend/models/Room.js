@@ -13,25 +13,15 @@ const roomSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  players: [{
+  opponent: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  playerCount: {
-    type: Number,
-    default: 2,
-    min: 2,
-    max: 4  // 2 for online mode, 4 for tournament (round robin)
+    ref: 'User',
+    default: null
   },
   status: {
     type: String,
     enum: ['waiting', 'active', 'completed', 'cancelled'],
     default: 'waiting'
-  },
-  mode: {
-    type: String,
-    enum: ['online', 'tournament'],
-    default: 'online'
   },
   format: {
     type: Number,

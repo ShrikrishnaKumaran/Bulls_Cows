@@ -31,10 +31,16 @@ const createRefreshToken = async (userId, device = null, ipAddress = null) => {
 const register = async (userData, device = null, ipAddress = null) => {
   const { username, email, password } = userData;
 
-  // Check if user exists
-  const userExists = await User.findOne({ email });
-  if (userExists) {
-    throw new Error('User already exists');
+  // Check if email already exists
+  const emailExists = await User.findOne({ email });
+  if (emailExists) {
+    throw new Error('Email already exists');
+  }
+
+  // Check if username already exists
+  const usernameExists = await User.findOne({ username });
+  if (usernameExists) {
+    throw new Error('Username already exists');
   }
 
   // Hash password
@@ -54,6 +60,7 @@ const register = async (userData, device = null, ipAddress = null) => {
     
     return {
       _id: user._id,
+      uid: user.uid,
       username: user.username,
       email: user.email,
       accessToken,
@@ -77,6 +84,7 @@ const login = async (credentials, device = null, ipAddress = null) => {
     
     return {
       _id: user._id,
+      uid: user.uid,
       username: user.username,
       email: user.email,
       accessToken,
@@ -104,7 +112,7 @@ const refreshAccessToken = async (refreshToken) => {
     // Verify refresh token
     const decoded = jwt.verify(
       refreshToken, 
-      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
+      process.env.JWT_REFRESH_SECRET
     );
     
     // Check if refresh token exists in database
@@ -150,24 +158,10 @@ const logout = async (refreshToken) => {
   }
 };
 
-// Logout from all devices - revoke all user's refresh tokens
-const logoutAll = async (userId) => {
-  try {
-    await RefreshToken.updateMany(
-      { user: userId },
-      { isRevoked: true }
-    );
-    return { message: 'Logged out from all devices' };
-  } catch (error) {
-    throw new Error('Logout failed');
-  }
-};
-
 module.exports = {
   register,
   login,
   getUserProfile,
   refreshAccessToken,
   logout,
-  logoutAll,
 };

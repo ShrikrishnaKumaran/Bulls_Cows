@@ -24,9 +24,7 @@ const createRoom = async (hostId, settings = {}) => {
   const room = await Room.create({
     roomCode,
     host: hostId,
-    players: [hostId],
-    playerCount: 1,
-    mode: settings.mode || 'online',
+    opponent: null,
     format: settings.format || 3,
     digits: settings.digits || 4,
     difficulty: settings.difficulty || 'easy',
@@ -36,7 +34,6 @@ const createRoom = async (hostId, settings = {}) => {
   return room;
 };
 
-// Join an existing room (Match)
 // Join an existing room
 const joinRoom = async (roomCode, playerId) => {
   const room = await Room.findOne({ roomCode });
@@ -49,17 +46,16 @@ const joinRoom = async (roomCode, playerId) => {
     throw new Error('Room is not available');
   }
 
-  if (room.playerCount >= 2) {
+  if (room.opponent) {
     throw new Error('Room is full');
   }
 
-  if (room.players.some(p => p.toString() === playerId.toString())) {
-    throw new Error('Player already in room');
+  if (room.host.toString() === playerId.toString()) {
+    throw new Error('You cannot join your own room');
   }
 
-  room.players.push(playerId);
-  room.playerCount = room.players.length;
-  room.status = 'active'; // Start game when second player joins
+  room.opponent = playerId;
+  room.status = 'active'; // Start game when opponent joins
 
   await room.save();
   return room;
@@ -79,16 +75,13 @@ const leaveRoom = async (roomCode, playerId) => {
     return { deleted: true };
   }
 
-  // Remove player from room
-  room.players = room.players.filter(p => p.toString() !== playerId.toString());
-  room.playerCount = room.players.length;
-  
-  // Set back to waiting if only host remains
-  if (room.playerCount === 1) {
+  // If opponent leaves, set opponent to null and status to waiting
+  if (room.opponent && room.opponent.toString() === playerId.toString()) {
+    room.opponent = null;
     room.status = 'waiting';
+    await room.save();
   }
 
-  await room.save();
   return room;
 };
 
@@ -96,7 +89,7 @@ const leaveRoom = async (roomCode, playerId) => {
 const getRoomByCode = async (roomCode) => {
   const room = await Room.findOne({ roomCode })
     .populate('host', 'username')
-    .populate('players', 'username');
+    .populate('opponent', 'username');
 
   if (!room) {
     throw new Error('Room not found');

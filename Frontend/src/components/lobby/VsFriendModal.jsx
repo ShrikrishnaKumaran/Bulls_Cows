@@ -1,0 +1,204 @@
+/**
+ * VsFriendModal - Online multiplayer room creation/joining modal
+ * 
+ * Allows users to:
+ * - Create a new room and get a code
+ * - Join an existing room by code
+ */
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+// Close Icon
+const CloseIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
+  </svg>
+);
+
+function VsFriendModal({ onClose }) {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('matchCode');
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [isWaiting, setIsWaiting] = useState(false);
+  const [joinCodeInput, setJoinCodeInput] = useState('');
+
+  const handleGenerateCode = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login to create a room');
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/matches/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ format: 3, digits: 4, difficulty: 'easy' })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setGeneratedCode(data.roomCode);
+        setIsWaiting(true);
+        navigate(`/lobby/room/${data.roomCode}`);
+        onClose();
+      } else {
+        alert('Failed to create room: ' + data.message);
+      }
+    } catch (error) {
+      alert('Error creating room. Please try again.');
+    }
+  };
+
+  const handleJoinRoom = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login to join a room');
+      navigate('/auth');
+      return;
+    }
+
+    if (!joinCodeInput.trim()) {
+      alert('Please enter a room code');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/matches/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ roomCode: joinCodeInput.toUpperCase() })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        navigate(`/lobby/room/${joinCodeInput.toUpperCase()}`);
+        onClose();
+      } else {
+        alert('Failed to join room: ' + data.message);
+      }
+    } catch (error) {
+      alert('Error joining room. Please try again.');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      {/* Modal Card */}
+      <div className="bg-[#1f2937] border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+          <h2 className="text-lg font-bold text-white tracking-wide">
+            ONLINE DUEL
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-slate-700">
+          <button
+            onClick={() => setActiveTab('matchCode')}
+            className={`flex-1 py-3 text-sm font-semibold uppercase tracking-wider transition-colors
+              ${activeTab === 'matchCode' 
+                ? 'text-primary border-b-2 border-primary' 
+                : 'text-slate-400 hover:text-white'
+              }`}
+          >
+            Match Code
+          </button>
+          <button
+            onClick={() => setActiveTab('inviteFriend')}
+            className={`flex-1 py-3 text-sm font-semibold uppercase tracking-wider transition-colors
+              ${activeTab === 'inviteFriend' 
+                ? 'text-primary border-b-2 border-primary' 
+                : 'text-slate-400 hover:text-white'
+              }`}
+          >
+            Invite Friend
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {activeTab === 'matchCode' && (
+            <div className="space-y-6">
+              {/* Create Room Section */}
+              <div className="bg-[#111827] rounded-xl p-4 border border-slate-700">
+                <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wider">
+                  Create Room
+                </h3>
+                <button
+                  onClick={handleGenerateCode}
+                  disabled={isWaiting}
+                  className={`w-full py-3 rounded-lg font-semibold transition-all
+                    ${isWaiting 
+                      ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
+                      : 'bg-primary text-black hover:bg-yellow-400'
+                    }`}
+                >
+                  {isWaiting ? 'Waiting...' : '➕ Generate Code'}
+                </button>
+                {generatedCode && (
+                  <div className="mt-3 p-3 bg-slate-800 rounded-lg">
+                    <p className="text-sm text-slate-400">Room Code:</p>
+                    <p className="text-2xl font-mono font-bold text-primary tracking-widest">{generatedCode}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Join Room Section */}
+              <div className="bg-[#111827] rounded-xl p-4 border border-slate-700">
+                <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wider">
+                  Join Room
+                </h3>
+                <input
+                  type="text"
+                  placeholder="Enter Room Code"
+                  value={joinCodeInput}
+                  onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                  maxLength={4}
+                  className="w-full bg-slate-800 border border-slate-600 rounded-lg py-3 px-4 text-white text-center text-xl font-mono tracking-widest uppercase placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary mb-3"
+                />
+                <button
+                  onClick={handleJoinRoom}
+                  disabled={!joinCodeInput.trim()}
+                  className={`w-full py-3 rounded-lg font-semibold transition-all
+                    ${!joinCodeInput.trim()
+                      ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                      : 'bg-blue-500 text-white hover:bg-blue-400'
+                    }`}
+                >
+                  Join Room
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'inviteFriend' && (
+            <div className="text-center py-8">
+              <p className="text-slate-400 mb-2">Friend invitation feature coming soon...</p>
+              <p className="text-slate-500 text-sm">
+                (Will show your friends with online status and invite buttons)
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default VsFriendModal;
