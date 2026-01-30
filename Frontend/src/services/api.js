@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-// Use relative URL so Vite proxy handles it, or use env variable for production
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+// In production: VITE_API_URL = https://backend.onrender.com (we append /api)
+// In development: Use relative URL '/api' so Vite proxy handles it
+const baseUrl = import.meta.env.VITE_API_URL;
+const API_URL = baseUrl ? `${baseUrl}/api` : '/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -97,8 +99,13 @@ api.interceptors.response.use(
       throw new Error('No access token returned');
     } catch (refreshError) {
       processQueue(refreshError, null);
-      // Don't redirect here - let the calling code handle it
-      // Just reject the promise
+      // Only clear token if refresh explicitly failed (not network error)
+      if (refreshError.response?.status === 401) {
+        // Refresh token is invalid/expired - user needs to login again
+        localStorage.removeItem('token');
+        // Optionally redirect to login - but let components handle this
+        console.log('Session expired, user needs to login again');
+      }
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

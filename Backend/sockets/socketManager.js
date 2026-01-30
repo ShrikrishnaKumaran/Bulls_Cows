@@ -21,6 +21,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const lobbyHandler = require('./lobbyHandler');
 const gameHandler = require('./gameHandler');
+const gameManager = require('./gameManager');
 
 // Socket.io server instance
 let io;
@@ -32,6 +33,12 @@ const userSockets = new Map();
 // Active games storage (in-memory for low latency)
 // Structure: { roomCode: gameState }
 const activeGames = {};
+
+// Get allowed origins for Socket.io CORS
+const getAllowedOrigins = () => {
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  return clientUrl.split(',').map(url => url.trim());
+};
 
 /**
  * Initialize Socket.io server with authentication
@@ -46,15 +53,16 @@ const initializeSocket = (server) => {
         if (!origin) return callback(null, true);
         
         // In development, allow all origins
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV !== 'production') {
           return callback(null, true);
         }
         
-        // In production, check against FRONTEND_URL
-        const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
-        if (origin === allowedOrigin) {
+        // In production, check against allowed origins
+        const allowedOrigins = getAllowedOrigins();
+        if (allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
+          console.log(`Socket CORS blocked origin: ${origin}`);
           callback(new Error('Not allowed by CORS'));
         }
       },
@@ -108,6 +116,49 @@ const initializeSocket = (server) => {
     socket.on('disconnect', () => {
       userSockets.delete(oderId);
       console.log(`[Socket] User ${socket.user.username} disconnected`);
+      
+      // Check activeGames for any game this user is in
+      for (const roomCode in activeGames) {
+        const game = activeGames[roomCode];
+        
+        if (game.status === 'GAME_OVER') continue;
+        
+        const isHost = game.host.oderId === oderId;
+        const isOpponent = game.opponent?.oderId === oderId;
+        
+        if (isHost || isOpponent) {
+          // Player was in an active game - opponent wins
+          if (game.status === 'PLAYING' || game.status === 'SETUP') {
+            const winnerId = isHost ? game.opponent.oderId : game.host.oderId;
+            const winnerName = isHost ? 'Opponent' : socket.user.username;
+            
+            // Stop any running timer
+            gameManager.stopTimer(roomCode);
+            
+            // Mark game as over
+            game.status = 'GAME_OVER';
+            
+            // Notify remaining player they won
+            io.to(roomCode).emit('game-over', {
+              winner: winnerId,
+              winnerName: isHost ? 'You' : winnerName,
+              reason: 'disconnect',
+              message: `${socket.user.username} disconnected. You win!`,
+              finalScores: game.scores || { [game.host.oderId]: 0, [game.opponent.oderId]: 0 },
+              hostId: game.host.oderId,
+              opponentId: game.opponent.oderId,
+            });
+            
+            console.log(`[Socket] Player ${socket.user.username} disconnected from game ${roomCode}, ${winnerId} wins`);
+            
+            // Cleanup game after 1 minute
+            setTimeout(() => {
+              delete activeGames[roomCode];
+            }, 60000);
+          }
+          break;
+        }
+      }
     });
   });
 

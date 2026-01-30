@@ -18,7 +18,9 @@ import OfflineGamePage from './pages/offline/GamePage'
 import CreateRoomPage from './pages/online/CreateRoomPage'
 import JoinRoomPage from './pages/online/JoinRoomPage'
 import RoomWaitingPage from './pages/online/RoomWaitingPage'
-import OnlineGamePage from './pages/online/GamePage'
+import LobbyPage from './pages/online/LobbyPage'
+import OnlineGamePage from './pages/online/OnlineGamePage'
+import OnlineSetupPage from './pages/online/OnlineSetupPage'
 
 // UI Components
 import ToastContainer from './components/ui/ToastContainer'
@@ -76,9 +78,11 @@ function App() {
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/offline/setup" element={<SetupPage />} />
         <Route path="/offline/game" element={<OfflineGamePage />} />
+        <Route path="/online/setup" element={<ProtectedRoute><OnlineSetupPage /></ProtectedRoute>} />
         <Route path="/lobby/create" element={<ProtectedRoute><CreateRoomPage /></ProtectedRoute>} />
         <Route path="/lobby/join" element={<ProtectedRoute><JoinRoomPage /></ProtectedRoute>} />
         <Route path="/lobby/room/:roomCode" element={<ProtectedRoute><RoomWaitingPage /></ProtectedRoute>} />
+        <Route path="/lobby/:roomCode" element={<ProtectedRoute><LobbyPage /></ProtectedRoute>} />
         <Route path="/game/online/:roomCode" element={<ProtectedRoute><OnlineGamePage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>

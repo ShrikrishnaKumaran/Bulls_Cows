@@ -99,6 +99,35 @@ const useAuthStore = create(
         }
       },
 
+      // Refresh access token proactively
+      refreshToken: async () => {
+        try {
+          const response = await api.post('/auth/refresh');
+          const { accessToken } = response.data;
+          
+          if (accessToken) {
+            localStorage.setItem('token', accessToken);
+            set({ token: accessToken });
+            
+            // Reinitialize socket with new token
+            try {
+              destroySocket();
+              initializeSocket(accessToken);
+              connectSocket();
+            } catch (err) {
+              console.error('Failed to reinitialize socket:', err);
+            }
+            
+            return accessToken;
+          }
+          throw new Error('No access token returned');
+        } catch (error) {
+          console.error('Token refresh failed:', error);
+          // Don't logout automatically - let the user continue if they have a valid session
+          throw error;
+        }
+      },
+
       // Clear error
       clearError: () => set({ error: null }),
 

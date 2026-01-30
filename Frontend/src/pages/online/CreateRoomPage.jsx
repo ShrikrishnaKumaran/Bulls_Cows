@@ -1,9 +1,10 @@
 /**
  * CreateRoomPage - Create a new game room with customizable settings
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSocket from '../../hooks/useSocket';
+import useOnlineGameStore from '../../store/useOnlineGameStore';
 
 // Back Icon
 const BackIcon = () => (
@@ -21,24 +22,60 @@ const CreateRoomPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { socket } = useSocket();
+  const { socket, connected, reconnect } = useSocket();
   const navigate = useNavigate();
+  
+  // Use online game store for creating room
+  const { createRoom, setupListeners, removeListeners, resetState } = useOnlineGameStore();
+
+  // Reset any previous game state and set up listeners on mount
+  useEffect(() => {
+    resetState();
+    setupListeners();
+    return () => removeListeners();
+  }, [resetState, setupListeners, removeListeners]);
+
+  // Auto-reconnect if disconnected
+  useEffect(() => {
+    if (!connected && socket) {
+      reconnect();
+    }
+  }, [connected, socket, reconnect]);
 
   const handleCreateRoom = () => {
+    console.log('[CreateRoom] Creating room, socket:', !!socket, 'connected:', connected);
+    
     if (!socket) {
-      setError('Socket connection not available');
+      setError('Socket not available. Please refresh the page.');
+      return;
+    }
+
+    if (!connected) {
+      setError('Not connected to server. Reconnecting...');
+      reconnect();
       return;
     }
 
     setLoading(true);
     setError('');
 
-    socket.emit('create-room', settings, (response) => {
+    // Add timeout for slow responses
+    const timeout = setTimeout(() => {
+      console.log('[CreateRoom] Request timed out');
       setLoading(false);
-      if (response.success) {
+      setError('Request timed out. Please try again.');
+    }, 10000);
+
+    // Use the store's createRoom action
+    createRoom(settings, (response) => {
+      console.log('[CreateRoom] Response:', response);
+      clearTimeout(timeout);
+      setLoading(false);
+      
+      if (response && response.success) {
         navigate(`/lobby/room/${response.room.roomCode}`);
       } else {
-        setError(response.message);
+        setError(response?.message || 'Failed to create room');
       }
     });
   };
@@ -61,6 +98,14 @@ const CreateRoomPage = () => {
 
         {/* Content */}
         <main className="flex-1 py-6">
+          {/* Connection Status */}
+          {!connected && (
+            <div className="bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 px-4 py-3 rounded-xl mb-6 text-sm flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+              Connecting to server...
+            </div>
+          )}
+          
           {error && (
             <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm">
               {error}

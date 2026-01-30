@@ -18,8 +18,6 @@ const CloseIcon = () => (
 function VsFriendModal({ onClose }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('matchCode');
-  const [generatedCode, setGeneratedCode] = useState('');
-  const [isWaiting, setIsWaiting] = useState(false);
   const [joinCodeInput, setJoinCodeInput] = useState('');
 
   const handleGenerateCode = async () => {
@@ -30,28 +28,9 @@ function VsFriendModal({ onClose }) {
       return;
     }
 
-    try {
-      const response = await fetch('/api/matches/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ format: 3, digits: 4, difficulty: 'easy' })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        setGeneratedCode(data.roomCode);
-        setIsWaiting(true);
-        navigate(`/lobby/room/${data.roomCode}`);
-        onClose();
-      } else {
-        alert('Failed to create room: ' + data.message);
-      }
-    } catch (error) {
-      alert('Error creating room. Please try again.');
-    }
+    // Navigate to online setup page to configure game settings
+    onClose();
+    navigate('/online/setup');
   };
 
   const handleJoinRoom = async () => {
@@ -142,21 +121,10 @@ function VsFriendModal({ onClose }) {
                 </h3>
                 <button
                   onClick={handleGenerateCode}
-                  disabled={isWaiting}
-                  className={`w-full py-3 rounded-lg font-semibold transition-all
-                    ${isWaiting 
-                      ? 'bg-slate-700 text-slate-400 cursor-not-allowed' 
-                      : 'bg-primary text-black hover:bg-yellow-400'
-                    }`}
+                  className="w-full py-3 rounded-lg font-semibold transition-all bg-primary text-black hover:bg-yellow-400"
                 >
-                  {isWaiting ? 'Waiting...' : '➕ Generate Code'}
+                  ➕ Create Room
                 </button>
-                {generatedCode && (
-                  <div className="mt-3 p-3 bg-slate-800 rounded-lg">
-                    <p className="text-sm text-slate-400">Room Code:</p>
-                    <p className="text-2xl font-mono font-bold text-primary tracking-widest">{generatedCode}</p>
-                  </div>
-                )}
               </div>
 
               {/* Join Room Section */}

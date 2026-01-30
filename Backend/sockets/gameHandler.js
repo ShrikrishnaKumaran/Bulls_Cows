@@ -8,6 +8,7 @@
  * - Turn-based guessing
  * - Score tracking for best-of-N format
  * - Win/round detection
+ * - Server-side timer for Hard mode
  * 
  * Game Flow:
  * 1. SETUP: Both players submit their secret numbers
@@ -21,6 +22,10 @@
  */
 
 const { calculateBullsAndCows, validateInput } = require('../utils/gameRules');
+const gameManager = require('./gameManager');
+
+// Timer constants
+const TIMER_DURATION = 30; // seconds
 
 /**
  * Initialize game handler for a socket connection
@@ -30,6 +35,36 @@ const { calculateBullsAndCows, validateInput } = require('../utils/gameRules');
  */
 const gameHandler = (io, socket, activeGames) => {
   const oderId = socket.user._id.toString();
+  
+  // Helper to start/restart timer for Hard mode
+  const startTurnTimer = (roomCode, game) => {
+    if (game.difficulty !== 'hard') return;
+    
+    gameManager.startTimer(
+      roomCode,
+      // onTick - broadcast timer updates
+      (timeLeft) => {
+        io.to(roomCode).emit('timer-tick', { timeLeft });
+      },
+      // onTimeout - skip turn
+      () => {
+        // Pass the game object to skipTurn (it's stored in activeGames, not gameManager)
+        const skipResult = gameManager.skipTurn(roomCode, activeGames[roomCode]);
+        if (skipResult) {
+          io.to(roomCode).emit('turn-skipped', {
+            skippedPlayer: skipResult.skippedPlayer,
+            nextTurn: skipResult.nextTurn,
+            message: 'Turn skipped due to timeout',
+          });
+          
+          // Reset timer for next player using the game from activeGames
+          startTurnTimer(roomCode, activeGames[roomCode]);
+        }
+      },
+      // Pass the game object for external storage
+      game
+    );
+  };
 
   // ─────────────────────────────────────────────────────────────
   // EVENT: game-init
@@ -119,15 +154,28 @@ const gameHandler = (io, socket, activeGames) => {
       if (game.secrets[hostId] && game.secrets[oppId]) {
         game.status = 'PLAYING';
         
-        // Randomly select who goes first
-        const players = [hostId, oppId];
-        game.currentTurn = players[Math.floor(Math.random() * 2)];
+        // Determine who goes first:
+        // - Round 1: Random 50/50 chance
+        // - Subsequent rounds: Previous round's loser starts
+        if (game.roundLoser) {
+          // Loser of previous round starts
+          game.currentTurn = game.roundLoser;
+          delete game.roundLoser; // Clear after using
+        } else {
+          // First round: Random selection
+          const players = [hostId, oppId];
+          game.currentTurn = players[Math.floor(Math.random() * 2)];
+        }
         
         // Notify both players
         io.to(roomCode).emit('match-start', {
           currentTurn: game.currentTurn,
-          roundNumber: game.roundNumber
+          roundNumber: game.roundNumber,
+          timerDuration: game.difficulty === 'hard' ? TIMER_DURATION : null,
         });
+        
+        // Start timer for Hard mode
+        startTurnTimer(roomCode, game);
       }
     } catch (error) {
       callback({ success: false, message: error.message });
@@ -192,6 +240,12 @@ const gameHandler = (io, socket, activeGames) => {
         ...logEntry,
         nextTurn: game.currentTurn
       });
+      
+      // Reset timer for next player's turn (Hard mode)
+      if (game.difficulty === 'hard') {
+        gameManager.stopTimer(roomCode);
+        startTurnTimer(roomCode, game);
+      }
 
       // ─── WIN CONDITION CHECK ───
       if (result.isWin) {
@@ -205,6 +259,9 @@ const gameHandler = (io, socket, activeGames) => {
           // ─── MATCH WON ───
           game.status = 'GAME_OVER';
           
+          // Stop timer on game over
+          gameManager.stopTimer(roomCode);
+          
           io.to(roomCode).emit('game-over', {
             winner: oderId,
             winnerName: socket.user.username,
@@ -217,19 +274,29 @@ const gameHandler = (io, socket, activeGames) => {
           });
 
           // Cleanup game from memory after 1 minute
-          setTimeout(() => delete activeGames[roomCode], 60000);
+          setTimeout(() => {
+            gameManager.deleteGame(roomCode);
+            delete activeGames[roomCode];
+          }, 60000);
           
         } else {
           // ─── ROUND WON - Continue to next round ───
+          // Stop timer for setup phase
+          gameManager.stopTimer(roomCode);
+          
           game.roundNumber += 1;
           game.status = 'SETUP';
           game.secrets = {};
           game.logs = [];
+          
+          // Store the round loser - they will start next round
+          game.roundLoser = opponentId;
           game.currentTurn = null;
 
           io.to(roomCode).emit('round-over', {
             roundWinner: oderId,
             roundWinnerName: socket.user.username,
+            roundLoser: opponentId,
             scores: {
               [game.host.oderId]: game.scores[game.host.oderId] || 0,
               [game.opponent.oderId]: game.scores[game.opponent.oderId] || 0

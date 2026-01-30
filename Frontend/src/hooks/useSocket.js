@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
-import { getSocket, connectSocket } from '../services/socket';
+import { useEffect, useState, useCallback } from 'react';
+import { getSocket, initializeSocket, connectSocket, isSocketConnected } from '../services/socket';
 import useAuthStore from '../store/useAuthStore';
 
 const useSocket = () => {
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [error, setError] = useState(null);
   const { token, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
@@ -13,31 +14,69 @@ const useSocket = () => {
     }
 
     try {
-      const socketInstance = getSocket();
+      // Initialize socket with token
+      const socketInstance = initializeSocket(token);
       setSocket(socketInstance);
 
-      // Connect socket
-      connectSocket();
+      // Check if already connected
+      if (socketInstance.connected) {
+        setConnected(true);
+      } else {
+        // Connect if not connected
+        connectSocket();
+      }
 
       // Listen for connection events
-      socketInstance.on('connect', () => {
+      const onConnect = () => {
+        console.log('[useSocket] Connected');
         setConnected(true);
-      });
+        setError(null);
+      };
 
-      socketInstance.on('disconnect', () => {
+      const onDisconnect = (reason) => {
+        console.log('[useSocket] Disconnected:', reason);
         setConnected(false);
-      });
+      };
+
+      const onConnectError = (err) => {
+        console.error('[useSocket] Connection error:', err.message);
+        setError(err.message);
+        setConnected(false);
+        
+        // If authentication error, the token might be expired
+        // Trigger a page reload or redirect to login
+        if (err.message.includes('Authentication error') || err.message.includes('Invalid token')) {
+          console.warn('[useSocket] Token might be expired. Please re-login.');
+          // Clear invalid token
+          localStorage.removeItem('token');
+          // Optionally redirect to login
+          window.location.href = '/auth';
+        }
+      };
+
+      socketInstance.on('connect', onConnect);
+      socketInstance.on('disconnect', onDisconnect);
+      socketInstance.on('connect_error', onConnectError);
 
       return () => {
-        socketInstance.off('connect');
-        socketInstance.off('disconnect');
+        socketInstance.off('connect', onConnect);
+        socketInstance.off('disconnect', onDisconnect);
+        socketInstance.off('connect_error', onConnectError);
       };
-    } catch (error) {
-      // Socket initialization error
+    } catch (err) {
+      console.error('[useSocket] Initialization error:', err);
+      setError(err.message);
     }
   }, [isAuthenticated, token]);
 
-  return { socket, connected };
+  // Force reconnect function
+  const reconnect = useCallback(() => {
+    if (socket && !socket.connected) {
+      socket.connect();
+    }
+  }, [socket]);
+
+  return { socket, connected, error, reconnect };
 };
 
 export default useSocket;

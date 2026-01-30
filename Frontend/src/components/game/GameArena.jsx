@@ -33,24 +33,14 @@ function GameArena({
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const logsEndRef = useRef(null);
 
-  // ─── FIX: SORT LOGS CHRONOLOGICALLY ───
+  // ─── FIX: SORT LOGS CHRONOLOGICALLY BY TIMESTAMP ───
   const sortedLogs = useMemo(() => {
     // Create a safe copy of logs to avoid mutating props
     return [...logs].sort((a, b) => {
-      // Extract number from "T1", "T2", "T10" etc.
-      // Assumes format is like "T1" or purely numeric
-      const getTurnNum = (str) => {
-        if (typeof str === 'number') return str;
-        if (!str) return 0;
-        // Remove non-digits and parse
-        const num = parseInt(str.replace(/\D/g, ''), 10); 
-        return isNaN(num) ? 0 : num;
-      };
-
-      const turnA = getTurnNum(a.timestamp);
-      const turnB = getTurnNum(b.timestamp);
-
-      return turnA - turnB; // Ascending order (1, 2, 3...)
+      // Sort by timestamp (Date objects or ISO strings)
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      return timeA - timeB; // Ascending order (oldest first)
     });
   }, [logs]);
 
@@ -153,12 +143,14 @@ function GameArena({
               isMe={true}
               isActive={isMyTurn}
               attempts={myAttempts}
+              isCurrentUser={true}
             />
             <PlayerCard
               name={opponentName}
               isMe={false}
               isActive={!isMyTurn}
               attempts={opponentAttempts}
+              isCurrentUser={false}
             />
           </div>
 
@@ -177,10 +169,9 @@ function GameArena({
                 No moves yet. Make the first guess!
               </div>
             ) : (
-              sortedLogs.map((log) => {
-                // Safely calculate turn number for display
-                const rawTurn = log.timestamp ? log.timestamp.toString().replace(/\D/g, '') : '0';
-                const turnNum = parseInt(rawTurn, 10);
+              sortedLogs.map((log, index) => {
+                // Use index + 1 for sequential turn numbers (1, 2, 3...)
+                const turnNum = index + 1;
 
                 return (
                   <GameLogCard 
