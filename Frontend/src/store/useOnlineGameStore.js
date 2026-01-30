@@ -213,16 +213,38 @@ const useOnlineGameStore = create((set, get) => ({
     try {
       const socket = getSocket();
       
-      if (!socket || !socket.connected) {
-        const errorMsg = 'Socket not connected. Please try again.';
+      if (!socket) {
+        const errorMsg = 'Socket not available. Please refresh the page.';
         set({ loading: false, error: errorMsg });
+        if (callback) callback({ success: false, message: errorMsg });
+        return;
+      }
+      
+      if (!socket.connected) {
+        const errorMsg = 'Not connected to server. Reconnecting...';
+        set({ loading: false, error: errorMsg });
+        socket.connect();
         if (callback) callback({ success: false, message: errorMsg });
         return;
       }
       
       set({ loading: true, error: null });
       
+      // Add timeout for the callback
+      let callbackCalled = false;
+      const timeoutId = setTimeout(() => {
+        if (!callbackCalled) {
+          callbackCalled = true;
+          set({ loading: false, error: 'Request timed out. Please try again.' });
+          if (callback) callback({ success: false, message: 'Request timed out. Please try again.' });
+        }
+      }, 15000); // 15 second timeout
+      
       socket.emit('join-room', code, (response) => {
+        if (callbackCalled) return; // Already timed out
+        callbackCalled = true;
+        clearTimeout(timeoutId);
+        
         set({ loading: false });
         
         if (response.success) {
