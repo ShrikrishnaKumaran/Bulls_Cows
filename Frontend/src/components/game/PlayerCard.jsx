@@ -16,8 +16,11 @@ const UsersIcon = ({ className }) => (
   </svg>
 );
 
-const PlayerCard = ({ name, isMe, isActive, attempts }) => {
+const PlayerCard = ({ name, isMe, isActive, attempts, isCurrentUser = false }) => {
   const Icon = isMe ? UserIcon : UsersIcon;
+
+  // Display name with (You) suffix for current user
+  const displayName = isCurrentUser ? `${name} (You)` : name;
 
   // Player 1 (isMe) = Yellow, Player 2 (!isMe) = Blue
   const activeColor = isMe
@@ -56,7 +59,7 @@ const PlayerCard = ({ name, isMe, isActive, attempts }) => {
           </div>
           <div>
             <h3 className={`font-bold text-base ${isActive ? 'text-white' : 'text-slate-400'}`}>
-              {name}
+              {displayName}
             </h3>
             <p className="text-xs text-slate-500">
               Att: <span className={isActive ? accentText : 'text-slate-400'}>{attempts}</span>

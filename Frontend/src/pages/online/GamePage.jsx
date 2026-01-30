@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useGameStore from '../../store/useGameStore';
 import { getSocket } from '../../services/socket';
+import OnlineStepper from '../../components/setup/OnlineStepper';
 
 const OnlineGamePage = () => {
   const { roomCode } = useParams();
@@ -43,6 +44,14 @@ const OnlineGamePage = () => {
       removeSocketListeners();
     };
   }, [setupSocketListeners, removeSocketListeners]);
+
+  // Reset secretInput when entering a new round (SETUP phase)
+  useEffect(() => {
+    if (gameState === 'SETUP') {
+      setSecretInput('');
+      setError('');
+    }
+  }, [gameState, roundNumber]);
 
   const isMyTurn = currentTurn === myUserId;
   const myLogs = logs.filter(log => log.player === myUserId);
@@ -181,86 +190,131 @@ const OnlineGamePage = () => {
 
   // ============ SETUP PHASE ============
   if (gameState === 'SETUP') {
+    // Calculate score display
+    const myScore = scores[myUserId] || 0;
+    const opponentScore = Object.entries(scores).find(([id]) => id !== myUserId)?.[1] || 0;
+    
     return (
-      <div className="min-h-screen bg-background-dark flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-surface-dark rounded-xl p-8 border border-slate-700 tech-border">
-            <div className="scanlines pointer-events-none absolute inset-0 opacity-5"></div>
-            
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-primary font-space tracking-wider">
-                🔐 SECURE YOUR DATA
-              </h1>
-              <p className="text-slate-400 mt-2 text-sm">
-                Round {roundNumber} of {format}
-              </p>
-              {Object.keys(scores).length > 0 && (
-                <p className="text-slate-500 mt-1 text-xs">
-                  Score: {Object.values(scores).join(' - ')}
-                </p>
-              )}
+      <div className="min-h-screen bg-[#111827] flex flex-col font-space overflow-hidden">
+        <div className="scanlines" />
+        
+        <div className="relative z-10 flex-1 flex flex-col max-w-md mx-auto w-full px-3 sm:px-4">
+          {/* Header */}
+          <header className="py-4 pt-8 flex items-center gap-4">
+            <div className="w-9" /> {/* Spacer for alignment */}
+            <h1 className="text-lg font-bold text-white tracking-wider uppercase">
+              🔐 Secret Setup
+            </h1>
+          </header>
+
+          {/* Online Stepper */}
+          <OnlineStepper 
+            hasSubmitted={isMySecretSubmitted}
+            opponentReady={isOpponentReady}
+            roundNumber={roundNumber}
+          />
+
+          {/* Match Info Bar */}
+          <div className="flex justify-center gap-4 mb-4">
+            <div className="bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700 flex items-center gap-2">
+              <span className="text-slate-400 text-xs uppercase tracking-wider">Match</span>
+              <span className="text-primary font-bold">{roundNumber} / {format}</span>
             </div>
-
-            <div className="bg-input-bg rounded-lg p-4 mb-4 border border-slate-700">
-              <div className="flex justify-center gap-2">
-                {[...Array(digits)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`
-                      w-12 h-14 rounded-lg flex items-center justify-center text-2xl font-bold
-                      ${secretInput[i] 
-                        ? 'bg-primary text-black' 
-                        : 'bg-slate-800 text-slate-600'}
-                      transition-all duration-200
-                    `}
-                  >
-                    {secretInput[i] ? '●' : '_'}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {error && (
-              <div className="bg-red-900/30 border border-red-500 rounded-lg p-3 mb-4">
-                <p className="text-red-400 text-sm text-center">{error}</p>
-              </div>
-            )}
-
-            {!isMySecretSubmitted ? (
-              <>
-                <NumberPad 
-                  value={secretInput} 
-                  onChange={setSecretInput}
-                  disabled={false}
-                />
-                
-                <button
-                  onClick={handleSubmitSecret}
-                  disabled={secretInput.length !== digits}
-                  className={`
-                    w-full mt-6 py-3 px-6 rounded-lg font-bold uppercase tracking-wider
-                    transition-all duration-200
-                    ${secretInput.length === digits
-                      ? 'bg-primary text-black shadow-neon hover:shadow-neon-strong hover:scale-[1.02]'
-                      : 'bg-slate-700 text-slate-500 cursor-not-allowed'}
-                  `}
-                >
-                  🔒 LOCK IN SECRET
-                </button>
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <div className="inline-block animate-pulse">
-                  <span className="text-primary text-lg font-bold">
-                    ⏳ WAITING FOR UPLINK...
-                  </span>
-                </div>
-                <p className="text-slate-500 mt-4 text-sm">
-                  {isOpponentReady ? '✅ Opponent is ready!' : '⏳ Waiting for opponent to set their secret...'}
-                </p>
+            {Object.keys(scores).length > 0 && (
+              <div className="bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700 flex items-center gap-2">
+                <span className="text-green-400 font-bold">{myScore}</span>
+                <span className="text-slate-500">-</span>
+                <span className="text-red-400 font-bold">{opponentScore}</span>
               </div>
             )}
           </div>
+
+          <main className="flex-1 flex flex-col justify-center py-2">
+            {/* Main Card */}
+            <div className="w-full max-w-sm mx-auto bg-[#1f2937] border border-slate-700 rounded-3xl overflow-hidden shadow-2xl">
+              
+              {/* Header Section */}
+              <div className="bg-slate-800 p-5 border-b border-white/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-primary font-bold tracking-wider uppercase text-sm">
+                      {isMySecretSubmitted ? 'WAITING FOR SYNC' : 'ENTER YOUR SECRET'}
+                    </h2>
+                    <p className="text-slate-500 text-xs mt-1">
+                      {digits}-digit unique code
+                    </p>
+                  </div>
+                  <div className="text-2xl">
+                    {isMySecretSubmitted ? '📡' : '🔐'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Secret Input Display */}
+              <div className="p-6">
+                <div className="flex justify-center gap-2 mb-4">
+                  {[...Array(digits)].map((_, i) => (
+                    <div
+                      key={i}
+                      className={`
+                        w-12 h-14 rounded-xl flex items-center justify-center text-2xl font-bold
+                        border-2 transition-all duration-200
+                        ${secretInput[i] 
+                          ? 'bg-primary/20 border-primary text-primary shadow-[0_0_15px_rgba(250,204,20,0.3)]' 
+                          : 'bg-slate-800/50 border-slate-600 text-slate-600'}
+                      `}
+                    >
+                      {secretInput[i] ? '●' : '_'}
+                    </div>
+                  ))}
+                </div>
+
+                {error && (
+                  <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 mb-4">
+                    <p className="text-red-400 text-sm text-center">{error}</p>
+                  </div>
+                )}
+
+                {!isMySecretSubmitted ? (
+                  <>
+                    <NumberPad 
+                      value={secretInput} 
+                      onChange={setSecretInput}
+                      disabled={false}
+                    />
+                    
+                    <button
+                      onClick={handleSubmitSecret}
+                      disabled={secretInput.length !== digits}
+                      className={`
+                        w-full mt-6 py-3 px-6 rounded-xl font-bold uppercase tracking-wider
+                        transition-all duration-200
+                        ${secretInput.length === digits
+                          ? 'bg-primary text-black shadow-[0_0_20px_rgba(250,204,20,0.5)] hover:shadow-[0_0_30px_rgba(250,204,20,0.7)] hover:scale-[1.02]'
+                          : 'bg-slate-700 text-slate-500 cursor-not-allowed'}
+                      `}
+                    >
+                      🔒 LOCK IN SECRET
+                    </button>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center animate-pulse">
+                      <span className="text-2xl">📡</span>
+                    </div>
+                    <p className="text-blue-400 font-bold text-lg mb-2">
+                      Syncing with opponent...
+                    </p>
+                    <p className="text-slate-500 text-sm">
+                      {isOpponentReady 
+                        ? '✅ Both players ready! Starting...' 
+                        : '⏳ Waiting for opponent to set their secret...'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </main>
         </div>
       </div>
     );

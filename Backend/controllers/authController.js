@@ -18,7 +18,7 @@ const getIpAddress = (req) => {
 const getCookieOptions = () => ({
   httpOnly: true, // Prevents XSS attacks by restricting access to the cookie from JavaScript and only allowing server-side access
   secure: process.env.NODE_ENV === 'production', // HTTPS only in production 
-  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // Use 'lax' in development for cross-port requests
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Use 'none' in production for cross-origin cookies
   maxAge: 30 * 24 * 60 * 60 * 1000, // after 30 days the cookie will expire and user needs to login again
 });
 

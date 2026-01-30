@@ -31,7 +31,11 @@ const createRoom = async (hostId, settings = {}) => {
     status: 'waiting'
   });
 
-  return room;
+  // Return populated room
+  const populatedRoom = await Room.findById(room._id)
+    .populate('host', 'username _id');
+    
+  return populatedRoom;
 };
 
 // Join an existing room
@@ -58,7 +62,13 @@ const joinRoom = async (roomCode, playerId) => {
   room.status = 'active'; // Start game when opponent joins
 
   await room.save();
-  return room;
+  
+  // Return populated room
+  const populatedRoom = await Room.findOne({ roomCode })
+    .populate('host', 'username _id')
+    .populate('opponent', 'username _id');
+    
+  return populatedRoom;
 };
 
 // Leave a room
@@ -88,8 +98,8 @@ const leaveRoom = async (roomCode, playerId) => {
 // Get room by code
 const getRoomByCode = async (roomCode) => {
   const room = await Room.findOne({ roomCode })
-    .populate('host', 'username')
-    .populate('opponent', 'username');
+    .populate('host', 'username _id')
+    .populate('opponent', 'username _id');
 
   if (!room) {
     throw new Error('Room not found');

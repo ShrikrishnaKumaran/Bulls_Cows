@@ -1,9 +1,10 @@
 /**
  * JoinRoomPage - Join an existing game room by code
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSocket from '../../hooks/useSocket';
+import useOnlineGameStore from '../../store/useOnlineGameStore';
 
 // Back Icon
 const BackIcon = () => (
@@ -17,8 +18,25 @@ const JoinRoomPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { socket } = useSocket();
+  const { socket, connected, reconnect } = useSocket();
   const navigate = useNavigate();
+  
+  // Use online game store
+  const { joinRoom, setupListeners, removeListeners, resetState } = useOnlineGameStore();
+
+  // Reset any previous game state and set up listeners on mount
+  useEffect(() => {
+    resetState();
+    setupListeners();
+    return () => removeListeners();
+  }, [resetState, setupListeners, removeListeners]);
+  
+  // Auto-reconnect if disconnected
+  useEffect(() => {
+    if (!connected && socket) {
+      reconnect();
+    }
+  }, [connected, socket, reconnect]);
 
   const handleJoinRoom = () => {
     if (!roomCode || roomCode.length !== 4) {
@@ -31,12 +49,20 @@ const JoinRoomPage = () => {
       return;
     }
 
+    if (!connected) {
+      setError('Not connected to server. Reconnecting...');
+      reconnect();
+      return;
+    }
+
     setLoading(true);
     setError('');
 
-    socket.emit('join-room', roomCode.toUpperCase(), (response) => {
+    // Use the store's joinRoom action
+    joinRoom(roomCode.toUpperCase(), (response) => {
       setLoading(false);
       if (response.success) {
+        // Always navigate to waiting room - host will start the game
         navigate(`/lobby/room/${roomCode.toUpperCase()}`);
       } else {
         setError(response.message);

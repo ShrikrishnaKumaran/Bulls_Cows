@@ -9,7 +9,7 @@
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../services/api';
 import { 
   AuthInput, 
   PrimaryButton, 
@@ -17,8 +17,6 @@ import {
   TechFooter 
 } from './AuthComponents';
 import useToastStore from '../../store/useToastStore';
-
-const API_URL = '/api';
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -104,23 +102,26 @@ export default function AuthPage() {
       let response;
 
       if (activeTab === 'login') {
-        response = await axios.post(`${API_URL}/auth/login`, {
+        response = await api.post('/auth/login', {
           email: formData.email,
           password: formData.password,
-        }, { withCredentials: true });
+        });
       } else {
-        response = await axios.post(`${API_URL}/auth/register`, {
+        response = await api.post('/auth/register', {
           username: formData.username,
           email: formData.email,
           password: formData.password,
-        }, { withCredentials: true });
+        });
       }
+
+      console.log('Auth response:', response.data); // Debug log
 
       // Backend returns accessToken, not token
       const { accessToken } = response.data;
       
       // Validate token before storing
-      if (!accessToken || !accessToken.startsWith('eyJ')) {
+      if (!accessToken || typeof accessToken !== 'string' || !accessToken.startsWith('eyJ')) {
+        console.error('Token validation failed:', { accessToken, responseData: response.data });
         throw new Error('Invalid token received from server');
       }
       

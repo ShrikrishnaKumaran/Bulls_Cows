@@ -4,10 +4,11 @@
  * Shows room info and waits for opponent to join.
  * When opponent joins, automatically navigates to game.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useSocket from '../../hooks/useSocket';
-import useGameStore from '../../store/useGameStore';
+import useOnlineGameStore from '../../store/useOnlineGameStore';
+import useAuthStore from '../../store/useAuthStore';
 
 // Back Icon
 const BackIcon = () => (
@@ -30,62 +31,122 @@ const RoomWaitingPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [countdown, setCountdown] = useState(null);
 
-  const { socket } = useSocket();
+  const { socket, connected } = useSocket();
   const navigate = useNavigate();
-  const initializeGame = useGameStore((state) => state.initializeGame);
+  
+  // Get current user from auth store
+  const { user } = useAuthStore();
+  
+  // Use online game store to setup listeners and check status
+  const { setupListeners, removeListeners, isHost: storeIsHost, status } = useOnlineGameStore();
+  
+  // Determine if current user is host - check both store and room data
+  const isHost = useMemo(() => {
+    // First check the store value
+    if (storeIsHost) return true;
+    
+    // Then check room data against current user
+    if (room && user) {
+      const hostId = room.host?._id || room.host;
+      return hostId === user._id || hostId === user.id;
+    }
+    
+    return false;
+  }, [storeIsHost, room, user]);
+
+  // Countdown effect - navigates to game when countdown reaches 0
+  useEffect(() => {
+    if (countdown === null) return;
+    
+    if (countdown === 0) {
+      console.log('[RoomWaiting] Countdown done, navigating to game');
+      navigate(`/game/online/${roomCode}`);
+      return;
+    }
+    
+    const timer = setTimeout(() => {
+      setCountdown(countdown - 1);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [countdown, navigate, roomCode]);
+
+  // Watch store status - when it changes to SETUP, start countdown
+  useEffect(() => {
+    console.log('[RoomWaiting] Status changed:', status, 'countdown:', countdown);
+    if (status === 'SETUP' && countdown === null) {
+      console.log('[RoomWaiting] Status is SETUP, starting countdown');
+      setCountdown(3);
+    }
+  }, [status, countdown]);
+
+  // Set up online game store listeners on mount
+  useEffect(() => {
+    setupListeners();
+    return () => removeListeners();
+  }, [setupListeners, removeListeners]);
 
   useEffect(() => {
     if (!socket || !roomCode) return;
+    
+    // Wait for socket to be connected
+    if (!connected) {
+      console.log('[RoomWaiting] Waiting for socket connection...');
+      return;
+    }
 
-    socket.emit('join-room', roomCode, (response) => {
+    console.log('[RoomWaiting] Socket connected, isHost:', isHost, 'storeIsHost:', storeIsHost, 'getting room:', roomCode);
+
+    // Always get room info first
+    socket.emit('get-room', roomCode, (response) => {
       setLoading(false);
+      console.log('[RoomWaiting] Get room response:', response);
       if (response.success) {
         setRoom(response.room);
       } else {
-        socket.emit('get-room', roomCode, (getResponse) => {
-          if (getResponse.success) {
-            setRoom(getResponse.room);
-          } else {
-            setError(getResponse.message || response.message);
-          }
-        });
+        setError(response.message);
       }
     });
 
-    socket.on('player-joined', (data) => {
+    // If not host, also try to join (in case we haven't joined yet)
+    if (!storeIsHost) {
+      socket.emit('join-room', roomCode, (response) => {
+        console.log('[RoomWaiting] Join room response:', response);
+        if (response.success) {
+          setRoom(response.room);
+        }
+        // If join fails, we already have room info from get-room above
+      });
+    }
+
+    // Local event handlers for this component's UI
+    const onPlayerJoined = (data) => {
+      console.log('[RoomWaiting] Player joined:', data);
       setRoom((prev) => ({
         ...prev,
         opponent: data.opponent,
       }));
-    });
+    };
 
-    socket.on('player-left', () => {
+    const onPlayerLeft = () => {
+      console.log('[RoomWaiting] Player left');
       setRoom((prev) => ({
         ...prev,
         opponent: null,
       }));
-    });
+    };
 
-    socket.on('game-start', (data) => {
-      initializeGame(data.roomCode, {
-        format: data.format,
-        digits: data.digits,
-        hostId: data.host?._id || data.host,
-        opponentId: data.opponent?._id || data.opponent,
-        roundNumber: 1,
-        scores: {},
-      });
-      
-      navigate(`/game/online/${data.roomCode}`);
-    });
+    socket.on('player-joined', onPlayerJoined);
+    socket.on('player-left', onPlayerLeft);
 
     return () => {
-      socket.off('player-joined');
-      socket.off('player-left');
-      socket.off('game-start');
+      socket.off('player-joined', onPlayerJoined);
+      socket.off('player-left', onPlayerLeft);
     };
-  }, [socket, roomCode, navigate, initializeGame]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket, roomCode, connected, storeIsHost]);
 
   const handleLeaveRoom = () => {
     if (socket && roomCode) {
@@ -93,6 +154,20 @@ const RoomWaitingPage = () => {
         if (response.success) {
           navigate('/home');
         }
+      });
+    } else {
+      navigate('/home');
+    }
+  };
+
+  const handleStartGame = () => {
+    if (socket && roomCode && room?.opponent) {
+      console.log('[RoomWaiting] Starting game...');
+      socket.emit('start-game', roomCode, (response) => {
+        if (!response.success) {
+          console.error('[RoomWaiting] Failed to start game:', response.message);
+        }
+        // The game-start event will trigger navigation
       });
     }
   };
@@ -213,8 +288,17 @@ const RoomWaitingPage = () => {
             </div>
           </div>
 
-          {/* Waiting Animation */}
-          {!room?.opponent && (
+          {/* Waiting Animation / Countdown */}
+          {countdown !== null ? (
+            <div className="text-center py-8">
+              <div className="text-6xl font-bold text-primary mb-4 animate-pulse">
+                {countdown}
+              </div>
+              <p className="text-white text-lg uppercase tracking-widest">
+                Game Starting...
+              </p>
+            </div>
+          ) : !room?.opponent ? (
             <div className="text-center">
               <div className="flex justify-center gap-1 mb-4">
                 <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
@@ -223,11 +307,36 @@ const RoomWaitingPage = () => {
               </div>
               <p className="text-slate-400 text-sm">Share the room code with your friend</p>
             </div>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-green-400 text-sm">
+                ✓ Both players ready!
+              </p>
+            </div>
           )}
         </main>
 
         {/* Footer */}
-        <footer className="py-6">
+        <footer className="py-6 space-y-3">
+          {/* Start Game Button - Only show to host when opponent has joined */}
+          {isHost && room?.opponent && countdown === null && (
+            <button
+              onClick={handleStartGame}
+              className="w-full py-4 rounded-xl bg-primary text-black font-bold text-lg shadow-neon hover:bg-yellow-400 transition-all active:scale-[0.98]"
+            >
+              🎮 Start Game
+            </button>
+          )}
+          
+          {/* Waiting message for non-host */}
+          {!isHost && room?.opponent && countdown === null && (
+            <div className="text-center py-3">
+              <p className="text-slate-400 text-sm animate-pulse">
+                Waiting for host to start the game...
+              </p>
+            </div>
+          )}
+          
           <button
             onClick={handleLeaveRoom}
             className="w-full py-3 rounded-xl bg-red-500/20 text-red-400 font-semibold border border-red-500/30 hover:bg-red-500/30 transition-all"

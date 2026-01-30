@@ -1,13 +1,13 @@
 ﻿const jwt = require('jsonwebtoken');
 
-// Generate access token (short-lived)
+// Generate access token (medium-lived for better UX)
 const generateAccessToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_ACCESS_EXPIRE || '7d', // Extended for development
+    expiresIn: process.env.JWT_ACCESS_EXPIRE || '15d', // 15 days - less frequent refresh needed
   });
 };
 
-// Generate refresh token (long-lived)
+// Generate refresh token (long-lived - 30 days)
 const generateRefreshToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRE || '30d',
