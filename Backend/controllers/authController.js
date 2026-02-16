@@ -1,18 +1,4 @@
 ﻿const authService = require('../services/authService');
-const UAParser = require('ua-parser-js');
-
-// Helper to extract device info from user-agent
-const getDeviceInfo = (userAgent) => {
-  const parser = new UAParser(userAgent);
-  const device = parser.getDevice();
-
-  return device.type || 'Desktop';
-};
-
-// Helper to extract IP address
-const getIpAddress = (req) => {
-  return req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-};
 
 // Cookie options
 const getCookieOptions = () => ({
@@ -27,10 +13,7 @@ const getCookieOptions = () => ({
 // @access  Public
 const register = async (req, res) => {
   try {
-    const device = getDeviceInfo(req.headers['user-agent']);
-    const ipAddress = getIpAddress(req);
-    
-    const userData = await authService.register(req.body, device, ipAddress);
+    const userData = await authService.register(req.body);
     
     // Set refresh token in httpOnly cookie
     res.cookie('refreshToken', userData.refreshToken, getCookieOptions());//getCookieOptions() funciton are set of rules for the cookie storage
@@ -59,10 +42,7 @@ const register = async (req, res) => {
 // @access  Public
 const login = async (req, res) => {
   try {
-    const device = getDeviceInfo(req.headers['user-agent']);
-    const ipAddress = getIpAddress(req);
-    
-    const userData = await authService.login(req.body, device, ipAddress);
+    const userData = await authService.login(req.body);
     
     // Set refresh token in httpOnly cookie
     res.cookie('refreshToken', userData.refreshToken, getCookieOptions());

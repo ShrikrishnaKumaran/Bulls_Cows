@@ -37,12 +37,10 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
   // ─────────────────────────────────────────────────────────────
   socket.on('create-room', async (settings, callback) => {
     try {
-      console.log('[Lobby] Creating room for user:', socket.user.username);
       const room = await roomService.createRoom(socket.user._id, settings);
       
       // Join the socket.io room for real-time updates
       socket.join(room.roomCode);
-      console.log('[Lobby] Room created:', room.roomCode, 'Host joined socket room');
       
       callback({
         success: true,
@@ -69,12 +67,10 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
   // ─────────────────────────────────────────────────────────────
   socket.on('join-room', async (roomCode, callback) => {
     try {
-      console.log('[Lobby] User', socket.user.username, 'joining room:', roomCode);
       const room = await roomService.joinRoom(roomCode, socket.user._id);
       
       // Join the socket.io room
       socket.join(roomCode);
-      console.log('[Lobby] Opponent joined socket room:', roomCode);
       
       // Notify host that opponent joined
       socket.to(roomCode).emit('player-joined', {
@@ -99,7 +95,6 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
   // ─────────────────────────────────────────────────────────────
   socket.on('start-game', async (roomCode, callback) => {
     try {
-      console.log('[Lobby] Start game requested for room:', roomCode);
       const room = await roomService.getRoomByCode(roomCode);
       
       // Verify the requester is the host
@@ -114,8 +109,6 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
       }
       
       const opponentId = room.opponent._id ? room.opponent._id.toString() : room.opponent.toString();
-      
-      console.log('[Lobby] Game starting - Host:', hostId, 'Opponent:', opponentId);
       
       // Initialize game state in memory
       activeGames[roomCode] = {
@@ -139,13 +132,11 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
       
       // Ensure both sockets are in the room
       const opponentSocketId = getUserSocketId(opponentId);
-      console.log('[Lobby] Opponent socket ID:', opponentSocketId);
       
       if (opponentSocketId) {
         const opponentSocket = io.sockets.sockets.get(opponentSocketId);
         if (opponentSocket) {
           opponentSocket.join(roomCode);
-          console.log('[Lobby] Opponent socket joined room:', roomCode);
         }
       }
 
@@ -160,7 +151,6 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
         opponent: room.opponent,
       };
       
-      console.log('[Lobby] Emitting game-start:', gameStartPayload);
       io.to(roomCode).emit('game-start', gameStartPayload);
       
       callback({ success: true });
@@ -196,8 +186,6 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
           hostId: game.host.oderId,
           opponentId: game.opponent.oderId,
         });
-        
-        console.log('[Lobby] Player quit during game, opponent wins:', winnerId);
       }
       
       const result = await roomService.leaveRoom(roomCode, socket.user._id);
@@ -234,7 +222,6 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
       
       // Ensure socket joins the room (important for reconnection)
       socket.join(roomCode);
-      console.log('[Lobby] User', socket.user.username, 'joined socket room via get-room:', roomCode);
       
       callback({ success: true, room });
     } catch (error) {

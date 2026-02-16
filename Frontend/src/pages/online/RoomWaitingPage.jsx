@@ -61,7 +61,6 @@ const RoomWaitingPage = () => {
     if (countdown === null) return;
     
     if (countdown === 0) {
-      console.log('[RoomWaiting] Countdown done, navigating to game');
       navigate(`/game/online/${roomCode}`);
       return;
     }
@@ -75,9 +74,7 @@ const RoomWaitingPage = () => {
 
   // Watch store status - when it changes to SETUP, start countdown
   useEffect(() => {
-    console.log('[RoomWaiting] Status changed:', status, 'countdown:', countdown);
     if (status === 'SETUP' && countdown === null) {
-      console.log('[RoomWaiting] Status is SETUP, starting countdown');
       setCountdown(3);
     }
   }, [status, countdown]);
@@ -93,16 +90,12 @@ const RoomWaitingPage = () => {
     
     // Wait for socket to be connected
     if (!connected) {
-      console.log('[RoomWaiting] Waiting for socket connection...');
       return;
     }
-
-    console.log('[RoomWaiting] Socket connected, isHost:', isHost, 'storeIsHost:', storeIsHost, 'getting room:', roomCode);
 
     // Always get room info first
     socket.emit('get-room', roomCode, (response) => {
       setLoading(false);
-      console.log('[RoomWaiting] Get room response:', response);
       if (response.success) {
         setRoom(response.room);
       } else {
@@ -113,7 +106,6 @@ const RoomWaitingPage = () => {
     // If not host, also try to join (in case we haven't joined yet)
     if (!storeIsHost) {
       socket.emit('join-room', roomCode, (response) => {
-        console.log('[RoomWaiting] Join room response:', response);
         if (response.success) {
           setRoom(response.room);
         }
@@ -123,7 +115,6 @@ const RoomWaitingPage = () => {
 
     // Local event handlers for this component's UI
     const onPlayerJoined = (data) => {
-      console.log('[RoomWaiting] Player joined:', data);
       setRoom((prev) => ({
         ...prev,
         opponent: data.opponent,
@@ -131,7 +122,6 @@ const RoomWaitingPage = () => {
     };
 
     const onPlayerLeft = () => {
-      console.log('[RoomWaiting] Player left');
       setRoom((prev) => ({
         ...prev,
         opponent: null,
@@ -162,7 +152,6 @@ const RoomWaitingPage = () => {
 
   const handleStartGame = () => {
     if (socket && roomCode && room?.opponent) {
-      console.log('[RoomWaiting] Starting game...');
       socket.emit('start-game', roomCode, (response) => {
         if (!response.success) {
           console.error('[RoomWaiting] Failed to start game:', response.message);

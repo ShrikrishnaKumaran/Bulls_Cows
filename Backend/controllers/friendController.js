@@ -1,12 +1,3 @@
-/**
- * Friend Controller - HTTP Handlers for Friend System
- * 
- * Handles all friend-related API endpoints:
- * - Search users
- * - Send/Accept/Reject friend requests
- * - Get friends list
- */
-
 const friendService = require('../services/friendService');
 
 /**
@@ -16,15 +7,7 @@ const friendService = require('../services/friendService');
  */
 const searchUsers = async (req, res) => {
   try {
-    const { q } = req.query;
-    
-    if (!q || q.trim().length < 2) {
-      return res.status(400).json({ 
-        message: 'Search query must be at least 2 characters' 
-      });
-    }
-
-    const users = await friendService.searchUsers(q, req.user._id);
+    const users = await friendService.searchUsers(req.query.q, req.user._id);
     res.status(200).json(users);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -39,13 +22,7 @@ const searchUsers = async (req, res) => {
  */
 const sendRequest = async (req, res) => {
   try {
-    const { targetUid } = req.body;
-
-    if (!targetUid) {
-      return res.status(400).json({ message: 'Target UID is required' });
-    }
-
-    const result = await friendService.sendFriendRequest(req.user._id, targetUid);
+    const result = await friendService.sendFriendRequest(req.user._id, req.body.targetUid);
     res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -60,13 +37,7 @@ const sendRequest = async (req, res) => {
  */
 const acceptRequest = async (req, res) => {
   try {
-    const { requesterId } = req.body;
-
-    if (!requesterId) {
-      return res.status(400).json({ message: 'Requester ID is required' });
-    }
-
-    const result = await friendService.acceptFriendRequest(req.user._id, requesterId);
+    const result = await friendService.acceptFriendRequest(req.user._id, req.body.requesterId);
     res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -81,13 +52,7 @@ const acceptRequest = async (req, res) => {
  */
 const rejectRequest = async (req, res) => {
   try {
-    const { requesterId } = req.body;
-
-    if (!requesterId) {
-      return res.status(400).json({ message: 'Requester ID is required' });
-    }
-
-    const result = await friendService.rejectFriendRequest(req.user._id, requesterId);
+    const result = await friendService.rejectFriendRequest(req.user._id, req.body.requesterId);
     res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -102,13 +67,7 @@ const rejectRequest = async (req, res) => {
  */
 const cancelRequest = async (req, res) => {
   try {
-    const { targetId } = req.body;
-
-    if (!targetId) {
-      return res.status(400).json({ message: 'Target ID is required' });
-    }
-
-    const result = await friendService.cancelFriendRequest(req.user._id, targetId);
+    const result = await friendService.cancelFriendRequest(req.user._id, req.body.targetId);
     res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -122,13 +81,7 @@ const cancelRequest = async (req, res) => {
  */
 const removeFriend = async (req, res) => {
   try {
-    const { friendId } = req.params;
-
-    if (!friendId) {
-      return res.status(400).json({ message: 'Friend ID is required' });
-    }
-
-    const result = await friendService.removeFriend(req.user._id, friendId);
+    const result = await friendService.removeFriend(req.user._id, req.params.friendId);
     res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -150,8 +103,8 @@ const getFriendsList = async (req, res) => {
 };
 
 /**
- * @desc    Get pending friend requests (incoming and outgoing)
- * @route   GET /api/friends/requests
+ * @desc    Get pending friend requests
+ * @route   GET /api/friends/pending
  * @access  Private
  */
 const getPendingRequests = async (req, res) => {

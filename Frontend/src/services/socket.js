@@ -1,12 +1,9 @@
 import { io } from 'socket.io-client';
 
-// Production backend URL (fallback when env vars not set)
-const PROD_BACKEND_URL = 'https://bulls-cows-backend.onrender.com';
-
-// In production: Use VITE_SOCKET_URL or fallback to production URL
-// In development: Use '' (empty) for same-origin
+// In production: Use VITE_SOCKET_URL env var
+// In development: Use '' (empty) for same-origin via Vite proxy
 const isProd = import.meta.env.PROD;
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (isProd ? PROD_BACKEND_URL : '');
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '';
 
 let socket = null;
 
@@ -34,11 +31,11 @@ export const initializeSocket = (token) => {
   });
 
   socket.on('connect', () => {
-    console.log('[Socket] Connected:', socket.id);
+    // Socket connected
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('[Socket] Disconnected:', reason);
+    // Socket disconnected
   });
 
   socket.on('connect_error', (error) => {

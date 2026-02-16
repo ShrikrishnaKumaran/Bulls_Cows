@@ -53,10 +53,6 @@ const userSchema = new mongoose.Schema({
     losses: {
       type: Number,
       default: 0
-    },
-    draws: {
-      type: Number,
-      default: 0
     }
   },
 
@@ -108,14 +104,10 @@ const userSchema = new mongoose.Schema({
     opponentName: String,
     result: {
       type: String,
-      enum: ['win', 'loss', 'draw']
+      enum: ['win', 'loss']
     },
     score: String, // e.g., "3-1"
-    format: Number, // Best of 1, 3, 5
-    playedAt: {
-      type: Date,
-      default: Date.now
-    }
+    format: Number // Best of 1, 3, 5
   }],
 
   isOnline: {

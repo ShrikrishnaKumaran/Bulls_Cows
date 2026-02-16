@@ -1,6 +1,7 @@
 /**
  * PlayerCard - Player information card
  * Shows player name, attempts, and active state
+ * Mobile-responsive with text truncation for long names
  */
 import { memo } from 'react';
 
@@ -33,7 +34,8 @@ const PlayerCard = ({ name, isMe, isActive, attempts, isCurrentUser = false }) =
   return (
     <div
       className={`
-        relative flex-1 bg-surface-dark/80 backdrop-blur-sm rounded-2xl p-4 border-2 transition-all duration-300
+        relative flex-1 bg-surface-dark/80 backdrop-blur-sm rounded-2xl border-2 transition-all duration-300
+        p-3 sm:p-4
         ${isActive
           ? activeColor
           : 'border-slate-700/50 opacity-70 shadow-lg shadow-black/20'
@@ -42,34 +44,44 @@ const PlayerCard = ({ name, isMe, isActive, attempts, isCurrentUser = false }) =
     >
       {/* TURN Badge */}
       {isActive && (
-        <div className={`absolute -top-3 left-1/2 -translate-x-1/2 ${turnBadgeBg} text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-lg`}>
+        <div className={`
+          absolute -top-3 left-1/2 -translate-x-1/2 
+          ${turnBadgeBg} 
+          text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider shadow-lg whitespace-nowrap z-20
+        `}>
           Turn
         </div>
       )}
 
       {/* Card Content */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-center justify-between gap-2 sm:gap-3">
         {/* Left: Icon + Name + Attempts */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1"> 
+          {/* Avatar Container */}
           <div className={`
-            w-10 h-10 rounded-full flex items-center justify-center
+            w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0 flex items-center justify-center
             ${isActive ? accentBg + ' ' + accentText : 'bg-slate-700 text-slate-400'}
           `}>
-            <Icon className="w-5 h-5" />
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <h3 className={`font-bold text-base ${isActive ? 'text-white' : 'text-slate-400'}`}>
+          
+          {/* Text Container (Width Restricted) */}
+          <div className="min-w-0 flex-1">
+            <h3 className={`
+              font-bold text-sm sm:text-base truncate leading-tight
+              ${isActive ? 'text-white' : 'text-slate-400'}
+            `}>
               {displayName}
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-[10px] sm:text-xs text-slate-500 truncate">
               Att: <span className={isActive ? accentText : 'text-slate-400'}>{attempts}</span>
             </p>
           </div>
         </div>
 
-        {/* Right: Badge */}
+        {/* Right: Badge (P1/P2) */}
         <span className={`
-          text-[10px] font-bold px-2 py-0.5 rounded-full uppercase
+          text-[10px] font-bold px-2 py-0.5 rounded-full uppercase flex-shrink-0
           ${isMe
             ? 'bg-primary/20 text-primary'
             : 'bg-blue-500/20 text-blue-400'

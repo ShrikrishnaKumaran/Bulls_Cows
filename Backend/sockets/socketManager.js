@@ -34,7 +34,7 @@ const userSockets = new Map();
 // Structure: { roomCode: gameState }
 const activeGames = {};
 
-// Get allowed origins for Socket.io CORS
+// Get allowed origins for Socket.io CORS (from CLIENT_URL env var)
 const getAllowedOrigins = () => {
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
   return clientUrl.split(',').map(url => url.trim());
@@ -62,7 +62,6 @@ const initializeSocket = (server) => {
         if (allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
-          console.log(`Socket CORS blocked origin: ${origin}`);
           callback(new Error('Not allowed by CORS'));
         }
       },
@@ -106,7 +105,6 @@ const initializeSocket = (server) => {
     
     // Track user's socket connection
     userSockets.set(oderId, socket.id);
-    console.log(`[Socket] User ${socket.user.username} connected (ID: ${socket.id})`);
 
     // Register event handlers
     lobbyHandler(io, socket, activeGames, getUserSocketId);
@@ -115,7 +113,6 @@ const initializeSocket = (server) => {
     // Handle disconnection
     socket.on('disconnect', () => {
       userSockets.delete(oderId);
-      console.log(`[Socket] User ${socket.user.username} disconnected`);
       
       // Check activeGames for any game this user is in
       for (const roomCode in activeGames) {
@@ -148,8 +145,6 @@ const initializeSocket = (server) => {
               hostId: game.host.oderId,
               opponentId: game.opponent.oderId,
             });
-            
-            console.log(`[Socket] Player ${socket.user.username} disconnected from game ${roomCode}, ${winnerId} wins`);
             
             // Cleanup game after 1 minute
             setTimeout(() => {

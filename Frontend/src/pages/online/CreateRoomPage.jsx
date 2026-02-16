@@ -43,8 +43,6 @@ const CreateRoomPage = () => {
   }, [connected, socket, reconnect]);
 
   const handleCreateRoom = () => {
-    console.log('[CreateRoom] Creating room, socket:', !!socket, 'connected:', connected);
-    
     if (!socket) {
       setError('Socket not available. Please refresh the page.');
       return;
@@ -61,14 +59,12 @@ const CreateRoomPage = () => {
 
     // Add timeout for slow responses
     const timeout = setTimeout(() => {
-      console.log('[CreateRoom] Request timed out');
       setLoading(false);
       setError('Request timed out. Please try again.');
     }, 10000);
 
     // Use the store's createRoom action
     createRoom(settings, (response) => {
-      console.log('[CreateRoom] Response:', response);
       clearTimeout(timeout);
       setLoading(false);
       

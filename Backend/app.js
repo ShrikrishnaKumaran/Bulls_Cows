@@ -5,10 +5,9 @@ const cookieParser = require('cookie-parser');
 
 const app = express();
 
-// Allowed origins for CORS (supports multiple origins via comma-separated CLIENT_URL)
+// Allowed origins for CORS (from CLIENT_URL env var)
 const getAllowedOrigins = () => {
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-  // Support multiple origins separated by comma
   return clientUrl.split(',').map(url => url.trim());
 };
 
@@ -28,7 +27,6 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },

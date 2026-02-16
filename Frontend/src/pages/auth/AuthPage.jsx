@@ -114,8 +114,6 @@ export default function AuthPage() {
         });
       }
 
-      console.log('Auth response:', response.data); // Debug log
-
       // Backend returns accessToken, not token
       const { accessToken } = response.data;
       

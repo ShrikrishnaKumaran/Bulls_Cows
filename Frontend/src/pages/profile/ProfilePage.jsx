@@ -323,29 +323,18 @@ const FriendSearchModal = ({ onClose, onRequestSent }) => {
 
 const MatchHistoryItem = ({ match }) => {
   const isWin = match.result === 'win';
-  const isLoss = match.result === 'loss';
-  const isDraw = match.result === 'draw';
-
-  const formatDate = (date) => {
-    const d = new Date(date);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
 
   return (
     <div className={`
       flex items-center justify-between p-3 rounded-xl border
-      ${isWin ? 'bg-green-500/5 border-green-500/20' : ''}
-      ${isLoss ? 'bg-red-500/5 border-red-500/20' : ''}
-      ${isDraw ? 'bg-slate-500/5 border-slate-500/20' : ''}
+      ${isWin ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'}
     `}>
       <div className="flex items-center gap-3">
         <div className={`
           w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm
-          ${isWin ? 'bg-green-500/20 text-green-400' : ''}
-          ${isLoss ? 'bg-red-500/20 text-red-400' : ''}
-          ${isDraw ? 'bg-slate-500/20 text-slate-400' : ''}
+          ${isWin ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}
         `}>
-          {isWin ? 'W' : isLoss ? 'L' : 'D'}
+          {isWin ? 'W' : 'L'}
         </div>
         <div>
           <div className="text-white font-semibold text-sm">{match.opponentName || 'Unknown'}</div>
@@ -354,7 +343,6 @@ const MatchHistoryItem = ({ match }) => {
       </div>
       <div className="text-right">
         <div className="text-white font-mono font-bold">{match.score || '0-0'}</div>
-        <div className="text-slate-600 text-xs">{formatDate(match.playedAt)}</div>
       </div>
     </div>
   );
@@ -552,7 +540,7 @@ const ProfilePage = () => {
     navigate('/lobby/create', { state: { inviteFriend: friend } });
   };
 
-  const stats = profile?.stats || { wins: 0, losses: 0, draws: 0, totalGames: 0 };
+  const stats = profile?.stats || { wins: 0, losses: 0, totalGames: 0 };
   const matchHistory = profile?.matchHistory || [];
 
   return (

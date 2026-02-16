@@ -28,13 +28,11 @@ const useSocket = () => {
 
       // Listen for connection events
       const onConnect = () => {
-        console.log('[useSocket] Connected');
         setConnected(true);
         setError(null);
       };
 
       const onDisconnect = (reason) => {
-        console.log('[useSocket] Disconnected:', reason);
         setConnected(false);
       };
 

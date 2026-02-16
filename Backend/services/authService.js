@@ -6,7 +6,7 @@ const { generateAccessToken, generateRefreshToken } = require('../utils/tokenGen
 
 //Authentication Service part 
 // Create and store refresh token
-const createRefreshToken = async (userId, device = null, ipAddress = null) => {
+const createRefreshToken = async (userId) => {
   const token = generateRefreshToken(userId);
   
   // Calculate expiration date (30 days from now)
@@ -17,8 +17,6 @@ const createRefreshToken = async (userId, device = null, ipAddress = null) => {
   await RefreshToken.create({
     user: userId,
     token,
-    device,
-    ipAddress,
     expiresAt,
     isRevoked: false
   });
@@ -28,7 +26,7 @@ const createRefreshToken = async (userId, device = null, ipAddress = null) => {
 
 //actual service functions
 // Register user
-const register = async (userData, device = null, ipAddress = null) => {
+const register = async (userData) => {
   const { username, email, password } = userData;
 
   // Check if email already exists
@@ -56,7 +54,7 @@ const register = async (userData, device = null, ipAddress = null) => {
 
   if (user) {
     const accessToken = generateAccessToken(user._id);
-    const refreshToken = await createRefreshToken(user._id, device, ipAddress);
+    const refreshToken = await createRefreshToken(user._id);
     
     return {
       _id: user._id,
@@ -72,7 +70,7 @@ const register = async (userData, device = null, ipAddress = null) => {
 };
 
 // Login user
-const login = async (credentials, device = null, ipAddress = null) => {
+const login = async (credentials) => {
   const { email, password } = credentials;
 
   // Check for user email (include password since select: false in schema)
@@ -80,7 +78,7 @@ const login = async (credentials, device = null, ipAddress = null) => {
 
   if (user && (await bcrypt.compare(password, user.password))) {
     const accessToken = generateAccessToken(user._id);
-    const refreshToken = await createRefreshToken(user._id, device, ipAddress);
+    const refreshToken = await createRefreshToken(user._id);
     
     return {
       _id: user._id,

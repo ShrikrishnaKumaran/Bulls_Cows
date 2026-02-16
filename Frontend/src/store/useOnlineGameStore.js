@@ -389,11 +389,8 @@ const useOnlineGameStore = create((set, get) => ({
         return;
       }
       
-      console.log('[OnlineGameStore] Setting up socket listeners, connected:', socket.connected);
-      
       // Player joined the room (host receives this)
       socket.on('player-joined', (data) => {
-        console.log('[OnlineGameStore] Player joined:', data);
         set((state) => ({
           players: {
             ...state.players,
@@ -409,7 +406,6 @@ const useOnlineGameStore = create((set, get) => ({
       
       // Player left the room
       socket.on('player-left', () => {
-        console.log('[OnlineGameStore] Player left');
         set((state) => ({
           players: {
             ...state.players,
@@ -420,7 +416,6 @@ const useOnlineGameStore = create((set, get) => ({
     
       // Game starting (both players joined)
       socket.on('game-start', (data) => {
-        console.log('[OnlineGameStore] Game starting:', data);
         const currentState = get();
       
         // Get current user ID from AUTH STORE (most reliable source)
@@ -432,8 +427,6 @@ const useOnlineGameStore = create((set, get) => ({
         
         // Determine if we're host by comparing with auth user ID
         const amIHost = myUserId === hostId;
-        
-        console.log('[OnlineGameStore] Am I host?', amIHost, 'myUserId:', myUserId, 'hostId:', hostId, 'opponentId:', opponentId);
         
         set({
           status: 'SETUP',
@@ -479,7 +472,6 @@ const useOnlineGameStore = create((set, get) => ({
       socket.on('match-start', (data) => {
         // Use auth store for reliable user ID
         const myId = getMyUserId() || get().players.me.oderId;
-        console.log('[OnlineGameStore] Match starting - myId:', myId, 'currentTurn:', data.currentTurn);
         set({
           status: 'PLAYING',
           gameData: {
@@ -558,8 +550,6 @@ const useOnlineGameStore = create((set, get) => ({
         const { players } = get();
         const oppId = players.opponent.oderId;
         
-        console.log('[OnlineGameStore] Round over - data:', data, 'myId:', myId, 'oppId:', oppId);
-        
         // Calculate scores - try both myId lookup and fallback
         const myScore = data.scores[myId] ?? data.scores[oppId] ?? 0;
         const oppScore = data.scores[oppId] ?? data.scores[myId] ?? 0;
@@ -581,8 +571,6 @@ const useOnlineGameStore = create((set, get) => ({
             calculatedOppScore = score;
           }
         }
-        
-        console.log('[OnlineGameStore] Calculated scores - me:', calculatedMyScore, 'opponent:', calculatedOppScore);
         
         // First show ROUND_OVER status with winner info
         set({
@@ -628,8 +616,6 @@ const useOnlineGameStore = create((set, get) => ({
         const { players } = get();
         const oppId = players.opponent.oderId;
         
-        console.log('[OnlineGameStore] Game over - winner:', data.winner, 'myId:', myId, 'finalScores:', data.finalScores);
-        
         // More robust score calculation from finalScores object
         let calculatedMyScore = 0;
         let calculatedOppScore = 0;
@@ -644,8 +630,6 @@ const useOnlineGameStore = create((set, get) => ({
             }
           }
         }
-        
-        console.log('[OnlineGameStore] Final calculated scores - me:', calculatedMyScore, 'opponent:', calculatedOppScore);
         
         set({
           status: 'GAME_OVER',

@@ -51,15 +51,12 @@ const OnlineGamePage = () => {
   
   // Initialize on mount
   useEffect(() => {
-    console.log('[OnlineGame] Mount - status:', status, 'roomCode:', roomCode, 'urlRoomCode:', urlRoomCode);
-    
     // Set up listeners
     setupListeners();
     
     // If we have no room code in store but have URL param, and status is IDLE,
     // we might have refreshed the page or navigated directly - try to rejoin
     if (urlRoomCode && !roomCode && status === 'IDLE') {
-      console.log('[OnlineGame] No room in store, attempting to rejoin:', urlRoomCode);
       joinRoom(urlRoomCode, (response) => {
         if (response.success) {
           requestGameState();

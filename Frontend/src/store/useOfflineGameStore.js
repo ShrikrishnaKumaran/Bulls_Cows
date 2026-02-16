@@ -30,7 +30,7 @@ const useOfflineGameStore = create((set, get) => ({
   player2Guesses: [],
   
   // Game Results
-  winner: null, // 'PLAYER_1' | 'PLAYER_2' | 'DRAW' | null
+  winner: null, // 'PLAYER_1' | 'PLAYER_2' | null
   roundWinner: null, // Track who won the last round
   
   // Score Tracking (for Best of X format)

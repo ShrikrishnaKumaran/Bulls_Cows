@@ -129,7 +129,7 @@ function GameArena({
       <div className="w-full max-w-lg mx-auto h-full flex flex-col relative z-10">
 
         {/* ═══ FIXED HEADER ═══ */}
-        <header className="flex-shrink-0 px-3 sm:px-4 pb-2 pt-4 sm:pt-6">
+        <header className="flex-shrink-0 px-3 sm:px-4 pb-2 pt-6 sm:pt-8">
           <MatchInfoPill
             currentMatch={config.currentMatch}
             totalMatches={config.totalMatches}

@@ -10,8 +10,6 @@ const refreshTokenSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  device: String,
-  ipAddress: String,
   expiresAt: Date,
   isRevoked: {
     type: Boolean,

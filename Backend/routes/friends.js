@@ -2,7 +2,7 @@
  * Friend Routes - API endpoints for Friend System
  * 
  * Base path: /api/friends
- */
+**/
 
 const express = require('express');
 const router = express.Router();

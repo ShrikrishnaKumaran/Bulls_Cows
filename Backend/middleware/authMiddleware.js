@@ -9,10 +9,6 @@ const protect = async (req, res, next) => {
     try {
       // Get token from header
       token = req.headers.authorization.split(' ')[1];
-      
-      // Debug: Log token info
-      console.log('Token received:', token ? `${token.substring(0, 20)}...` : 'null');
-      console.log('Token length:', token?.length);
 
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
