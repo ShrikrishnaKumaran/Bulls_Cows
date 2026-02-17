@@ -1,4 +1,4 @@
-# Bulls, Cows & Shit 🎯
+# Bulls & Cows  🎯
 
 A real-time multiplayer number guessing game with cyberpunk aesthetics.
 
@@ -12,7 +12,7 @@ A classic pen-and-paper game reimagined for the web! Two players pick secret num
 - Get feedback after each guess:
   - 🟢 **Bulls** - Right digit, right position
   - 🟡 **Cows** - Right digit, wrong position
-  - ⚫ **Shit** - Wrong digit
+  - ⚫ **Miss** - Wrong digit
 - First to crack the code wins!
 
 ## ✨ Features
@@ -47,29 +47,9 @@ cd Backend && npm run dev
 # Start Frontend (Terminal 2)
 cd Frontend && npm run dev
 ```
-
-**Environment Setup:**
-```bash
-# Backend/.env
-PORT=5000
-MONGO_URI=your_mongodb_uri
-JWT_SECRET=your_secret
-CLIENT_URL=http://localhost:5173
-
-# Frontend/.env (leave empty for local dev)
-VITE_API_URL=
-VITE_SOCKET_URL=
-```
-
 ## 📚 Documentation
 
 - [Technical Documentation](TECHNICAL_DOCUMENTATION.md) - Detailed file-by-file code explanations
-- [Deployment Guide](DEPLOYMENT.md) - Production deployment on Render
-
-## 📄 License
-
-MIT License
-
----
-
-Made with ❤️ and ☕
+- [API Reference](API_REFERENCE.md) - Endpoints, request/response formats
+- [WebSocket Events](WEBSOCKET_EVENTS.md) - Real-time communication protocols
+```
