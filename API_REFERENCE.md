@@ -6,7 +6,7 @@ Complete REST API documentation for Bulls, Cows & Shit backend.
 
 ```
 Development: http://localhost:5000/api
-Production: https://your-domain.com/api
+Production: https://bulls-cows-backend.onrender.com/api
 ```
 
 ## Authentication
@@ -485,7 +485,7 @@ POST /api/match/create
 |------------|--------|---------|---------------------------------------|
 | format     | number | 3       | Best-of format (1, 3, or 5)          |
 | digits     | number | 4       | Secret number length (3 or 4)        |
-| difficulty | string | "easy"  | `"easy"` (no timer) or `"hard"` (30s timer) |
+| difficulty | string | "easy"  | `"easy"` (no timer, full history) or `"hard"` (30s timer, last 5 guesses visible) |
 
 **Response (201 Created):**
 ```json

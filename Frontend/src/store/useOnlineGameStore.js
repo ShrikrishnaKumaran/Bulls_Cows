@@ -87,6 +87,8 @@ const useOnlineGameStore = create((set, get) => ({
   gameOverReason: null,
   roundWinner: null,      // 'me' | 'opponent' for round-over screen
   roundWinnerName: null,
+  roomClosedReason: null,
+  roomClosedMessage: null,
   
   // ═══════════════════════════════════════════════════════════
   // UI STATE
@@ -435,6 +437,16 @@ const useOnlineGameStore = create((set, get) => ({
           },
         }));
       });
+      
+      // Room closed by host
+      socket.on('room-closed', (data) => {
+        console.log('[OnlineGameStore] Room closed:', data);
+        set({
+          status: 'ROOM_CLOSED',
+          roomClosedReason: data?.reason || 'host_left',
+          roomClosedMessage: data?.message || 'Host has left the room',
+        });
+      });
     
       // Game starting (both players joined)
       socket.on('game-start', (data) => {
@@ -677,6 +689,7 @@ const useOnlineGameStore = create((set, get) => ({
       const socket = getSocket();
       socket.off('player-joined');
       socket.off('player-left');
+      socket.off('room-closed');
       socket.off('game-start');
       socket.off('opponent-ready');
       socket.off('match-start');
@@ -721,6 +734,8 @@ const useOnlineGameStore = create((set, get) => ({
       gameOverReason: null,
       roundWinner: null,
       roundWinnerName: null,
+      roomClosedReason: null,
+      roomClosedMessage: null,
       loading: false,
       error: null,
     });

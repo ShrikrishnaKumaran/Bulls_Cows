@@ -15,6 +15,7 @@ import useAuthStore from '../../store/useAuthStore';
 import { GameArena } from '../../components/game';
 import { SecretEntryStep } from '../../components/setup';
 import { Loader } from '../../components/ui';
+import { HARD_MODE_HISTORY_LIMIT } from '../../utils/constants';
 
 const OnlineGamePage = () => {
   const { roomCode: urlRoomCode } = useParams();
@@ -32,6 +33,7 @@ const OnlineGamePage = () => {
     gameOverReason,
     roundWinner,
     roundWinnerName,
+    roomClosedMessage,
     error,
     loading,
     joinRoom,
@@ -75,13 +77,24 @@ const OnlineGamePage = () => {
   const opponentName = players.opponent.name || 'Opponent';
   
   // Combine logs for GameArena (chronological order by guessNumber)
+  // In Hard mode, only show last 5 guesses per player (FIFO queue)
   const combinedLogs = useMemo(() => {
-    const myLogs = gameData.myLogs.map(log => ({ ...log, player: 'me' }));
-    const oppLogs = gameData.opponentLogs.map(log => ({ ...log, player: 'opponent' }));
+    const isHardMode = gameData.difficulty === 'hard';
+    
+    // Apply FIFO limit in Hard mode - only show last N guesses
+    const limitedMyLogs = isHardMode 
+      ? gameData.myLogs.slice(-HARD_MODE_HISTORY_LIMIT) 
+      : gameData.myLogs;
+    const limitedOppLogs = isHardMode 
+      ? gameData.opponentLogs.slice(-HARD_MODE_HISTORY_LIMIT) 
+      : gameData.opponentLogs;
+    
+    const myLogs = limitedMyLogs.map(log => ({ ...log, player: 'me' }));
+    const oppLogs = limitedOppLogs.map(log => ({ ...log, player: 'opponent' }));
     return [...myLogs, ...oppLogs].sort((a, b) => 
       (a.guessNumber || 0) - (b.guessNumber || 0)
     );
-  }, [gameData.myLogs, gameData.opponentLogs]);
+  }, [gameData.myLogs, gameData.opponentLogs, gameData.difficulty]);
   
   // ─── HANDLERS ───
   
@@ -154,6 +167,27 @@ const OnlineGamePage = () => {
       <div className="min-h-screen bg-[#111827] flex flex-col items-center justify-center p-4">
         <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-6 py-4 rounded-xl mb-6 text-center">
           {error}
+        </div>
+        <button
+          onClick={() => {
+            resetState();
+            navigate('/home');
+          }}
+          className="bg-primary text-black px-6 py-3 rounded-lg font-semibold"
+        >
+          Back to Home
+        </button>
+      </div>
+    );
+  }
+  
+  // ─── ROOM CLOSED (host left) ───
+  if (status === 'ROOM_CLOSED') {
+    return (
+      <div className="min-h-screen bg-[#111827] flex flex-col items-center justify-center p-4">
+        <div className="bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 px-6 py-4 rounded-xl mb-6 text-center max-w-sm">
+          <p className="text-lg font-semibold mb-2">Room Closed</p>
+          <p className="text-sm">{roomClosedMessage || 'Host has left the room'}</p>
         </div>
         <button
           onClick={() => {

@@ -51,6 +51,8 @@ export const TIMER = {
   TICK_INTERVAL: 1000, // 1 second
 };
 
+export const HARD_MODE_HISTORY_LIMIT = 5; // Only show last 5 guesses in Hard mode (FIFO)
+
 export const DIGITS = {
   MIN: 3,
   MAX: 5,

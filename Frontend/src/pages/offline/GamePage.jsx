@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import useOfflineGameStore from '../../store/useOfflineGameStore';
 import { GameArena } from '../../components/game';
 import RoundOverScreen from '../../components/game/RoundOverScreen';
-import { DIFFICULTY, TIMER, GAME_PHASE, ROUTES } from '../../utils/constants';
+import { DIFFICULTY, TIMER, GAME_PHASE, ROUTES, HARD_MODE_HISTORY_LIMIT } from '../../utils/constants';
 
 function OfflineGamePage() {
   const navigate = useNavigate();
@@ -111,9 +111,20 @@ function OfflineGamePage() {
   const currentTurn = isPlayer1Turn ? 'me' : 'opponent';
 
   // Memoize logs to prevent unnecessary re-renders and double display
+  // In Hard mode, only show last 5 guesses per player (FIFO queue)
   const logs = useMemo(() => {
+    const isHardMode = config.difficulty === DIFFICULTY.HARD;
+    
+    // Apply FIFO limit in Hard mode - only show last N guesses
+    const limitedP1Guesses = isHardMode 
+      ? player1Guesses.slice(-HARD_MODE_HISTORY_LIMIT) 
+      : player1Guesses;
+    const limitedP2Guesses = isHardMode 
+      ? player2Guesses.slice(-HARD_MODE_HISTORY_LIMIT) 
+      : player2Guesses;
+    
     const combined = [
-      ...player1Guesses.map(g => ({
+      ...limitedP1Guesses.map(g => ({
         id: `p1-${g.attempt}`,
         player: 'me',
         guess: g.guess,
@@ -121,7 +132,7 @@ function OfflineGamePage() {
         cows: g.cows,
         timestamp: `#${g.attempt}`
       })),
-      ...player2Guesses.map(g => ({
+      ...limitedP2Guesses.map(g => ({
         id: `p2-${g.attempt}`,
         player: 'opponent',
         guess: g.guess,
@@ -136,7 +147,7 @@ function OfflineGamePage() {
       const bNum = parseInt(b.timestamp.slice(1));
       return aNum - bNum;
     });
-  }, [player1Guesses, player2Guesses]);
+  }, [player1Guesses, player2Guesses, config.difficulty]);
 
   const formatLabel = config.format === 1 ? 'Single' : `Best of ${config.format}`;
   const myAttempts = player1Guesses.length;

@@ -26,100 +26,75 @@ const GameOverScreen = ({
       <div className="scanlines" />
 
       {/* Enhanced Background Decorations */}
-      <div className="absolute top-0 left-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-pulse" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
-      <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      <div className="absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-pulse" />
+      <div className="absolute bottom-0 right-0 w-72 h-72 bg-secondary/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
 
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full px-4">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-sm mx-auto w-full px-3">
         {/* Main Card Container */}
-        <div className="w-full bg-gradient-to-b from-surface-dark/95 to-surface-dark/80 backdrop-blur-xl rounded-3xl border-2 border-primary/30 shadow-2xl shadow-primary/20 p-8 relative overflow-hidden">
+        <div className="w-full bg-gradient-to-b from-surface-dark/95 to-surface-dark/80 backdrop-blur-xl rounded-2xl border-2 border-primary/30 shadow-2xl shadow-primary/20 p-5 relative overflow-hidden">
           {/* Glow effect on card edges */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 rounded-3xl pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 rounded-2xl pointer-events-none" />
           
           {/* Content */}
           <div className="relative z-10">
             {/* Trophy */}
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-4">
               <div className="relative">
                 {/* Glow ring */}
-                <div className="absolute inset-0 -m-4 bg-primary/20 rounded-full blur-xl animate-pulse" />
-                <div className="relative text-primary drop-shadow-[0_0_30px_rgba(250,204,20,0.8)] animate-bounce">
-                  <TrophyIcon className="w-28 h-28" />
+                <div className="absolute inset-0 -m-3 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                <div className="relative text-primary drop-shadow-[0_0_20px_rgba(250,204,20,0.8)] animate-bounce">
+                  <TrophyIcon className="w-16 h-16" />
                 </div>
               </div>
             </div>
 
             {/* Victory Badge */}
-            <div className="text-center mb-6">
-              <div className="inline-block px-6 py-2 bg-primary/10 border-2 border-primary/40 rounded-full backdrop-blur-sm mb-4">
-                <span className="text-primary text-sm font-bold tracking-widest uppercase">
+            <div className="text-center mb-4">
+              <div className="inline-block px-4 py-1.5 bg-primary/10 border border-primary/40 rounded-full backdrop-blur-sm mb-2">
+                <span className="text-primary text-xs font-bold tracking-widest uppercase">
                   ⚡ Victory ⚡
                 </span>
               </div>
             </div>
 
             {/* Winner Text */}
-            <h2 className="text-4xl font-bold text-center mb-3 bg-gradient-to-r from-primary via-yellow-300 to-primary bg-clip-text text-transparent animate-pulse">
+            <h2 className="text-2xl font-bold text-center mb-1 bg-gradient-to-r from-primary via-yellow-300 to-primary bg-clip-text text-transparent">
               {winnerName}
             </h2>
-            <p className="text-2xl font-bold text-white text-center mb-2">
+            <p className="text-lg font-bold text-white text-center mb-1">
               WINS THE MATCH!
             </p>
-            <p className="text-lg text-center mb-8">
+            <p className="text-sm text-center mb-4">
               <span className={winnerIsMe ? 'text-green-400' : 'text-blue-400'}>
-                {winnerIsMe ? '🎊 Outstanding Performance!' : '💪 Well Played!'}
+                {winnerIsMe ? '🎊 Outstanding!' : '💪 Well Played!'}
               </span>
             </p>
 
             {/* Stats Card */}
-            <div className="mb-8 p-6 bg-black/40 backdrop-blur-sm rounded-2xl border-2 border-slate-700/50 shadow-inner relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
-              <div className="relative z-10">
-                <div className="text-center text-slate-400 text-sm mb-3 uppercase tracking-wider font-semibold">Final Score</div>
-                <div className="text-center text-5xl font-bold text-white font-mono mb-2 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
-                  {score}
-                </div>
-                <div className="flex justify-center gap-2 mt-3">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-                </div>
+            <div className="mb-5 p-4 bg-black/40 backdrop-blur-sm rounded-xl border border-slate-700/50 shadow-inner">
+              <div className="text-center text-slate-400 text-xs mb-2 uppercase tracking-wider font-semibold">Final Score</div>
+              <div className="text-center text-3xl font-bold text-white font-mono drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">
+                {score}
               </div>
             </div>
 
             {/* Actions */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <button
                 onClick={onPlayAgain}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-yellow-400 to-primary text-black font-bold text-lg shadow-[0_0_30px_rgba(250,204,20,0.5)] hover:shadow-[0_0_50px_rgba(250,204,20,0.8)] transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center gap-3 uppercase tracking-wider relative overflow-hidden group"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-primary via-yellow-400 to-primary text-black font-bold text-sm shadow-[0_0_20px_rgba(250,204,20,0.5)] hover:shadow-[0_0_30px_rgba(250,204,20,0.8)] transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 uppercase tracking-wider relative overflow-hidden group"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
                 <span className="relative">🔄 Play Again</span>
               </button>
               <button
                 onClick={onQuit}
-                className="w-full py-4 rounded-2xl bg-surface-dark/60 backdrop-blur-sm text-slate-300 font-semibold text-base border-2 border-slate-600/50 hover:bg-slate-700/80 hover:border-slate-500 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-black/30 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-surface-dark/60 backdrop-blur-sm text-slate-300 font-semibold text-sm border border-slate-600/50 hover:bg-slate-700/80 hover:border-slate-500 transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] shadow-lg shadow-black/30 flex items-center justify-center gap-2"
               >
                 <span>🏠 Back to Home</span>
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Floating particles effect */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 bg-primary/30 rounded-full animate-pulse"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${i * 0.3}s`,
-                animationDuration: `${2 + Math.random() * 2}s`
-              }}
-            />
-          ))}
         </div>
       </div>
     </div>

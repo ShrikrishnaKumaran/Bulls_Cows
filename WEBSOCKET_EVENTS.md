@@ -4,6 +4,13 @@ Complete WebSocket (Socket.io) event documentation for Bulls, Cows & Shit.
 
 ## Connection
 
+### Server URLs
+
+```
+Development: http://localhost:5000
+Production:  https://bulls-cows-backend.onrender.com
+```
+
 ### Connecting to the Server
 
 ```javascript
@@ -223,14 +230,14 @@ socket.emit('leave-room', roomCode, callback);
 ```
 
 **Side Effects:**
-- If game status is `SETUP` or `PLAYING`, triggers `game-over` for opponent
-- If host leaves in lobby, triggers `room-closed` for opponent
+- If game status is `SETUP` or `PLAYING`, triggers `game-over` for opponent (they win by forfeit)
+- `room-closed` is always triggered when host leaves (any game state)
 
 ---
 
 ### room-closed
 
-Emitted when the host leaves the room (lobby state).
+Emitted when the host leaves the room (any state). In active games, this is sent in addition to `game-over`.
 
 **Server → Client (Opponent Only)**
 ```json
@@ -239,6 +246,10 @@ Emitted when the host leaves the room (lobby state).
   "message": "Host has left the room"
 }
 ```
+
+**Frontend Handling:**
+- Store sets `status: 'ROOM_CLOSED'`
+- UI shows notification and redirects user to home
 
 ---
 
@@ -552,6 +563,10 @@ Emitted when the match ends (player wins or opponent disconnects/quits).
 ## Timer Events
 
 These events only occur in **Hard Mode** (`difficulty: "hard"`).
+
+**Hard Mode Features:**
+- 30-second turn timer with auto-skip on timeout
+- Only last 5 guesses visible per player (FIFO queue on client)
 
 ### timer-tick
 

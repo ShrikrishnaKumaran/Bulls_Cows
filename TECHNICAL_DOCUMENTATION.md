@@ -1,7 +1,7 @@
 # Bulls, Cows & Shit - Technical Documentation
 
-**Version:** 3.0.0  
-**Last Updated:** February 6, 2026  
+**Version:** 3.1.0  
+**Last Updated:** February 17, 2026  
 **Status:** Production Ready
 
 ---
@@ -54,6 +54,7 @@ Bulls & Cows  is a full-stack multiplayer number guessing game where players try
 | Timer Mode | ✅ | Hard mode with 30-second turn timer |
 | Cyber Minimalist UI | ✅ | Tailwind CSS design system |
 | Mobile Responsive | ✅ | Optimized for all screen sizes |
+| PWA Support | ✅ | Install to home screen, offline assets |
 
 ---
 
@@ -165,7 +166,10 @@ Bulls_Cows/
 │
 ├── Frontend/
 │   ├── public/
-│   │   └── _redirects          # SPA routing for Render
+│   │   ├── _redirects          # SPA routing for Render
+│   │   ├── manifest.json       # PWA manifest
+│   │   ├── sw.js               # Service worker
+│   │   └── icons/              # PWA icons (192x192, 512x512)
 │   └── src/
 │       ├── components/
 │       │   ├── game/
@@ -609,7 +613,7 @@ function calculateBullsAndCows(secret, guess) {
   // State
   isConnected: boolean,
   roomCode: string | null,
-  status: 'IDLE' | 'LOBBY' | 'SETUP' | 'PLAYING' | 'ROUND_OVER' | 'GAME_OVER',
+  status: 'IDLE' | 'LOBBY' | 'SETUP' | 'PLAYING' | 'ROUND_OVER' | 'GAME_OVER' | 'ROOM_CLOSED',
   isHost: boolean,
   players: {
     me: { name, oderId, connected, ready },
@@ -624,6 +628,7 @@ function calculateBullsAndCows(secret, guess) {
   },
   winner, winnerName, gameOverReason,
   roundWinner, roundWinnerName,
+  roomClosedReason, roomClosedMessage,  // When host leaves
   
   // Actions
   connectSocket(token),
@@ -847,9 +852,41 @@ VITE_SOCKET_URL=https://bulls-cows-backend.onrender.com
 
 4. **Environment Variables:** Add VITE_API_URL and VITE_SOCKET_URL
 
+### Frontend Deployment (Vercel - Recommended)
+
+1. **Connect to Vercel** via GitHub
+2. **Configure:**
+   - Framework: Vite
+   - Root Directory: `Frontend`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+
+3. **Environment Variables:** Add VITE_API_URL and VITE_SOCKET_URL
+
+4. **PWA:** manifest.json and sw.js in `public/` are automatically served
+
 ### Production URLs
-- Frontend: `https://bulls-cows-frontend.onrender.com`
+- Frontend: `https://bulls-cows-pied.vercel.app`
 - Backend: `https://bulls-cows-backend.onrender.com`
+
+### PWA Configuration
+
+The app supports Progressive Web App features:
+
+1. **manifest.json** - App metadata for install prompts:
+   ```json
+   {
+     "name": "Bulls & Cows",
+     "short_name": "Bulls&Cows",
+     "start_url": "/",
+     "display": "standalone",
+     "theme_color": "#0f172a"
+   }
+   ```
+
+2. **Service Worker (sw.js)** - Caches static assets for faster loading
+
+3. **Install Prompt** - Users can add to home screen on mobile/desktop
 
 ---
 
@@ -921,8 +958,8 @@ cd Frontend && npm run dev
 - 4 digits: Standard mode
 
 ### Difficulty Modes
-- Easy: No time limit
-- Hard: 30-second turn timer (auto-skip on timeout)
+- Easy: No time limit, full guess history visible
+- Hard: 30-second turn timer (auto-skip on timeout) + only last 5 guesses visible (FIFO queue)
 
 ### Turn Order
 - Round 1: Random first player

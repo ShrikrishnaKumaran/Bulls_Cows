@@ -23,13 +23,13 @@ const OnlineStepper = ({ hasSubmitted, opponentReady, roundNumber = 1 }) => {
         };
       case 'active':
         return {
-          circle: 'bg-primary text-black border-primary shadow-[0_0_20px_rgba(250,204,20,0.5)] ring-4 ring-primary/20',
+          circle: 'bg-primary text-black border-primary shadow-[0_0_15px_rgba(250,204,20,0.5)] ring-2 ring-primary/20',
           text: 'text-primary',
           icon: '1'
         };
       case 'waiting':
         return {
-          circle: 'bg-blue-500 text-white border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.5)] ring-4 ring-blue-500/20 animate-pulse',
+          circle: 'bg-blue-500 text-white border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.5)] ring-2 ring-blue-500/20 animate-pulse',
           text: 'text-blue-400',
           icon: '⏳'
         };
@@ -46,10 +46,10 @@ const OnlineStepper = ({ hasSubmitted, opponentReady, roundNumber = 1 }) => {
   const step2 = getStepStyles(step2State);
 
   return (
-    <div className="flex items-center justify-center mb-6 px-4">
+    <div className="flex items-center justify-center mb-3 px-2">
       {/* Round indicator */}
-      <div className="absolute left-4 top-4">
-        <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+      <div className="absolute left-3 top-3">
+        <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
           Round {roundNumber}
         </span>
       </div>
@@ -58,7 +58,7 @@ const OnlineStepper = ({ hasSubmitted, opponentReady, roundNumber = 1 }) => {
       <div className="flex flex-col items-center">
         <div
           className={`
-            w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+            w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
             border-2 transition-all duration-300
             ${step1.circle}
           `}
@@ -67,7 +67,7 @@ const OnlineStepper = ({ hasSubmitted, opponentReady, roundNumber = 1 }) => {
         </div>
         <span
           className={`
-            text-[10px] mt-2 font-bold tracking-wider uppercase whitespace-nowrap
+            text-[8px] mt-1 font-bold tracking-wider uppercase whitespace-nowrap
             ${step1.text}
           `}
         >
@@ -76,7 +76,7 @@ const OnlineStepper = ({ hasSubmitted, opponentReady, roundNumber = 1 }) => {
       </div>
       
       {/* Connector Line */}
-      <div className="relative mx-4 w-16 sm:w-24">
+      <div className="relative mx-3 w-12 sm:w-20">
         {/* Background line */}
         <div className="w-full h-0.5 bg-slate-700" />
         {/* Glowing overlay when step 1 complete */}
@@ -91,7 +91,7 @@ const OnlineStepper = ({ hasSubmitted, opponentReady, roundNumber = 1 }) => {
       <div className="flex flex-col items-center">
         <div
           className={`
-            w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold
+            w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
             border-2 transition-all duration-300
             ${step2.circle}
           `}
@@ -100,7 +100,7 @@ const OnlineStepper = ({ hasSubmitted, opponentReady, roundNumber = 1 }) => {
         </div>
         <span
           className={`
-            text-[10px] mt-2 font-bold tracking-wider uppercase whitespace-nowrap
+            text-[8px] mt-1 font-bold tracking-wider uppercase whitespace-nowrap
             ${step2.text}
           `}
         >

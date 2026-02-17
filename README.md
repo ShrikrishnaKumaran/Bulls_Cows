@@ -24,8 +24,9 @@ A classic pen-and-paper game reimagined for the web! Two players pick secret num
 - 🌐 **Online 1v1** - Real-time battles via WebSockets
 - 🏠 **Room Codes** - Easy 4-character codes to invite friends
 - 👥 **Friend System** - Add friends & see who's online
-- ⏱️ **Hard Mode** - 30-second turn timer for intense gameplay
+- ⏱️ **Hard Mode** - 30-second turn timer + only last 5 guesses visible
 - 🎨 **Cyber UI** - Sleek neon-themed responsive design
+- 📲 **PWA** - Install on your home screen for app-like experience
 
 ## 🛠️ Tech Stack
 
