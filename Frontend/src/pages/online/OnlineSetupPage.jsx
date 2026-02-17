@@ -4,12 +4,13 @@
  * Uses the same ConfigStep component as offline mode for consistent UX.
  * After config is set, creates the room and navigates to waiting room.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useSocket from '../../hooks/useSocket';
 import useOnlineGameStore from '../../store/useOnlineGameStore';
 import { ConfigStep } from '../../components/setup';
 import { Loader } from '../../components/ui';
+import { isSocketConnected } from '../../services/socket';
 
 const OnlineSetupPage = () => {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ const OnlineSetupPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isInitializing, setIsInitializing] = useState(true);
+  const pendingAction = useRef(null);
 
   // Reset any previous game state and set up listeners on mount
   useEffect(() => {
@@ -41,6 +43,12 @@ const OnlineSetupPage = () => {
     if (connected) {
       setIsInitializing(false);
       setError(''); // Clear any connection errors
+      
+      // If there was a pending action (user clicked Next while connecting), execute it
+      if (pendingAction.current) {
+        pendingAction.current();
+        pendingAction.current = null;
+      }
     }
   }, [connected]);
 
@@ -70,17 +78,7 @@ const OnlineSetupPage = () => {
     navigate('/home');
   };
 
-  const handleNext = () => {
-    // Clear previous errors
-    setError('');
-    
-    // Check connection - but be more lenient
-    if (!connected) {
-      setError('Connecting to server... Please wait a moment and try again.');
-      if (socket) reconnect();
-      return;
-    }
-
+  const proceedWithRoomCreation = () => {
     setLoading(true);
     setError('');
 
@@ -104,6 +102,34 @@ const OnlineSetupPage = () => {
         setError(response?.message || 'Failed to create room');
       }
     });
+  };
+
+  const handleNext = () => {
+    // Clear previous errors
+    setError('');
+    
+    // Check real-time connection status (not just state)
+    const isConnected = connected || isSocketConnected();
+    
+    if (isConnected) {
+      proceedWithRoomCreation();
+    } else {
+      // Not connected - show loading and wait for connection
+      setLoading(true);
+      pendingAction.current = proceedWithRoomCreation;
+      
+      // Try to reconnect
+      if (socket) reconnect();
+      
+      // Set a timeout - if still not connected after 5 seconds, show error
+      setTimeout(() => {
+        if (!isSocketConnected() && pendingAction.current) {
+          pendingAction.current = null;
+          setLoading(false);
+          setError('Unable to connect to server. Please check your connection and try again.');
+        }
+      }, 5000);
+    }
   };
 
   // Show loading overlay while creating room or initially connecting

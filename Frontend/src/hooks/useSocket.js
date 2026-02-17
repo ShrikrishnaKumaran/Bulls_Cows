@@ -1,12 +1,25 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { getSocket, initializeSocket, connectSocket, isSocketConnected } from '../services/socket';
 import useAuthStore from '../store/useAuthStore';
+import api from '../services/api';
 
 const useSocket = () => {
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState(null);
   const { token, isAuthenticated } = useAuthStore();
+  const warmupDone = useRef(false);
+
+  // Wake up the server if it's sleeping (Render cold start)
+  useEffect(() => {
+    if (!warmupDone.current && isAuthenticated) {
+      warmupDone.current = true;
+      // Ping health endpoint to warm up server
+      api.get('/health').catch(() => {
+        // Ignore errors, just trying to wake up server
+      });
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
