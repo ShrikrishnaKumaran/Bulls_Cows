@@ -5,7 +5,7 @@
  * After config is set, creates the room and navigates to waiting room.
  */
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import useSocket from '../../hooks/useSocket';
 import useOnlineGameStore from '../../store/useOnlineGameStore';
 import { ConfigStep } from '../../components/setup';
@@ -13,8 +13,12 @@ import { Loader } from '../../components/ui';
 
 const OnlineSetupPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { socket, connected, reconnect } = useSocket();
   const { createRoom, setupListeners, removeListeners, resetState } = useOnlineGameStore();
+  
+  // Check if we're inviting a friend from profile page
+  const inviteFriend = location.state?.inviteFriend || null;
   
   const [config, setConfig] = useState({
     digits: 4,
@@ -92,8 +96,10 @@ const OnlineSetupPage = () => {
       setLoading(false);
       
       if (response && response.success) {
-        // Navigate to waiting room
-        navigate(`/lobby/room/${response.room.roomCode}`);
+        // Navigate to waiting room, passing inviteFriend if present
+        navigate(`/lobby/room/${response.room.roomCode}`, {
+          state: inviteFriend ? { inviteFriend } : undefined
+        });
       } else {
         setError(response?.message || 'Failed to create room');
       }

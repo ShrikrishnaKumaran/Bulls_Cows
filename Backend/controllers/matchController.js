@@ -1,43 +1,19 @@
-const Room = require('../models/Room');
 const { getIO, getUserSocketId } = require('../sockets/socketManager');
 const User = require('../models/User');
+const { createRoom, joinRoom: joinRoomService, getRoomByCode } = require('../services/roomService');
 
-// Helper function to generate random 4-character room code
-const generateRoomCode = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 4; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-};
-
-// Create a new match room
+/**
+ * @route   POST /api/match/create
+ * @desc    Create a new match room with game settings
+ * @access  Private (requires authentication)
+ */
 exports.createMatch = async (req, res) => {
   try {
     const { format = 3, digits = 4, difficulty = 'easy' } = req.body;
     const userId = req.user._id;
 
-    // Generate unique room code
-    let roomCode;
-    let exists = true;
-    while (exists) {
-      roomCode = generateRoomCode();
-      exists = await Room.findOne({ roomCode });
-    }
-
-    const room = new Room({
-      roomCode,
-      host: userId,
-      opponent: null,
-      format,
-      digits,
-      difficulty,
-      status: 'waiting'
-    });
-
-    await room.save();
-
+    // Use roomService to create room (handles code generation and uniqueness)
+    const room = await createRoom(userId, { format, digits, difficulty });
 
     res.status(201).json({
       success: true,
@@ -53,41 +29,18 @@ exports.createMatch = async (req, res) => {
   }
 };
 
-// Join an existing match room
+/**
+ * @route   POST /api/match/join
+ * @desc    Join an existing match room by room code
+ * @access  Private (requires authentication)
+ */
 exports.joinMatch = async (req, res) => {
   try {
     const { roomCode } = req.body;
     const userId = req.user._id;
 
-    const room = await Room.findOne({ roomCode: roomCode.toUpperCase() });
-
-    if (!room) {
-      return res.status(404).json({
-        success: false,
-        message: 'Room not found'
-      });
-    }
-
-    if (room.host.toString() === userId.toString()) {
-      return res.status(400).json({
-        success: false,
-        message: 'You cannot join your own room'
-      });
-    }
-
-    if (room.opponent) {
-      return res.status(400).json({
-        success: false,
-        message: 'Room is already full'
-      });
-    }
-
-    room.opponent = userId;
-    room.status = 'active';
-    await room.save();
-
-    await room.populate('host', 'username');
-    await room.populate('opponent', 'username');
+    // Use roomService to handle join logic
+    const room = await joinRoomService(roomCode.toUpperCase(), userId);
 
     res.status(200).json({
       success: true,
@@ -101,36 +54,37 @@ exports.joinMatch = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({
+    // Map service errors to appropriate HTTP status codes
+    const statusCode = error.message === 'Room not found' ? 404 : 400;
+    res.status(statusCode).json({
       success: false,
-      message: 'Failed to join match',
-      error: error.message
+      message: error.message
     });
   }
 };
 
-// Invite a friend to match
+/**
+ * @route   POST /api/match/invite
+ * @desc    Send a match invite to a friend via Socket.IO
+ * @access  Private (requires authentication, host only)
+ */
 exports.inviteToMatch = async (req, res) => {
   try {
     const { friendId, roomCode } = req.body;
     const userId = req.user._id;
 
-    const room = await Room.findOne({ roomCode: roomCode.toUpperCase() });
+    // Use roomService to get room
+    const room = await getRoomByCode(roomCode.toUpperCase());
 
-    if (!room) {
-      return res.status(404).json({
-        success: false,
-        message: 'Room not found'
-      });
-    }
-
-    if (room.host.toString() !== userId.toString()) {
+    // Validate host permission
+    if (room.host._id.toString() !== userId.toString()) {
       return res.status(403).json({
         success: false,
         message: 'Only the host can send invites'
       });
     }
 
+    // Check if room is full
     if (room.opponent) {
       return res.status(400).json({
         success: false,
@@ -172,39 +126,36 @@ exports.inviteToMatch = async (req, res) => {
       friendOnline: !!friendSocketId
     });
   } catch (error) {
-    res.status(500).json({
+    // Handle room not found from service
+    const statusCode = error.message === 'Room not found' ? 404 : 500;
+    res.status(statusCode).json({
       success: false,
-      message: 'Failed to send invite',
-      error: error.message
+      message: error.message
     });
   }
 };
 
-// Get match details
+/**
+ * @route   GET /api/match/:roomCode
+ * @desc    Get match room details by room code
+ * @access  Private (requires authentication)
+ */
 exports.getMatch = async (req, res) => {
   try {
     const { roomCode } = req.params;
 
-    const room = await Room.findOne({ roomCode: roomCode.toUpperCase() })
-      .populate('host', 'username')
-      .populate('opponent', 'username');
-
-    if (!room) {
-      return res.status(404).json({
-        success: false,
-        message: 'Room not found'
-      });
-    }
+    // Use roomService to get room with populated fields
+    const room = await getRoomByCode(roomCode.toUpperCase());
 
     res.status(200).json({
       success: true,
       matchData: room
     });
   } catch (error) {
-    res.status(500).json({
+    const statusCode = error.message === 'Room not found' ? 404 : 500;
+    res.status(statusCode).json({
       success: false,
-      message: 'Failed to get match',
-      error: error.message
+      message: error.message
     });
   }
 };

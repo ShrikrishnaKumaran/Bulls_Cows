@@ -121,7 +121,7 @@ function HomePage() {
         <div className="text-center">
           <button 
             onClick={() => setShowTutorial(true)}
-            className="text-sm font-semibold font-mono text-primary/70 hover:text-primary tracking-widest uppercase mb-6 transition-colors"
+            className="text-base font-bold font-mono text-primary hover:text-yellow-300 tracking-widest uppercase mb-6 transition-all duration-300 drop-shadow-[0_0_8px_rgba(250,204,20,0.8)] hover:drop-shadow-[0_0_12px_rgba(250,204,20,1)] animate-pulse"
           >
             [ HOW TO PLAY ]
           </button>

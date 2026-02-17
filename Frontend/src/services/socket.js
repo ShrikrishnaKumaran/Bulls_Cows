@@ -31,11 +31,11 @@ export const initializeSocket = (token) => {
   });
 
   socket.on('connect', () => {
-    // Socket connected
+    console.log('[Socket] Connected:', socket.id);
   });
 
   socket.on('disconnect', (reason) => {
-    // Socket disconnected
+    console.log('[Socket] Disconnected:', reason);
   });
 
   socket.on('connect_error', (error) => {

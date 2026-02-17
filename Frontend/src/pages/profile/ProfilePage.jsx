@@ -537,7 +537,7 @@ const ProfilePage = () => {
   };
 
   const handleInviteFriend = (friend) => {
-    navigate('/lobby/create', { state: { inviteFriend: friend } });
+    navigate('/online/setup', { state: { inviteFriend: friend } });
   };
 
   const stats = profile?.stats || { wins: 0, losses: 0, totalGames: 0 };

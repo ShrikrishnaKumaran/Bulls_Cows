@@ -4,11 +4,13 @@
  * Shows room info and waits for opponent to join.
  * When opponent joins, automatically navigates to game.
  */
-import { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import useSocket from '../../hooks/useSocket';
 import useOnlineGameStore from '../../store/useOnlineGameStore';
 import useAuthStore from '../../store/useAuthStore';
+import useToastStore from '../../store/useToastStore';
+import InviteFriendModal from '../../components/lobby/InviteFriendModal';
 
 // Back Icon
 const BackIcon = () => (
@@ -27,14 +29,21 @@ const CopyIcon = () => (
 
 const RoomWaitingPage = () => {
   const { roomCode } = useParams();
+  const location = useLocation();
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [countdown, setCountdown] = useState(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const inviteSentRef = useRef(false);
 
   const { socket, connected } = useSocket();
   const navigate = useNavigate();
+  const { addToast } = useToastStore();
+  
+  // Check if we should auto-invite a friend
+  const inviteFriend = location.state?.inviteFriend || null;
   
   // Get current user from auth store
   const { user } = useAuthStore();
@@ -85,6 +94,35 @@ const RoomWaitingPage = () => {
     return () => removeListeners();
   }, [setupListeners, removeListeners]);
 
+  // Auto-send invite if coming from profile page with inviteFriend
+  useEffect(() => {
+    // Skip if no friend to invite or already sent
+    if (!inviteFriend || inviteSentRef.current) return;
+    
+    // Wait for socket and room to be ready
+    if (!socket || !connected || !roomCode || !room) return;
+    
+    // Small delay to ensure socket is fully ready
+    const timer = setTimeout(() => {
+      if (inviteSentRef.current) return;
+      
+      socket.emit('send-game-invite', {
+        friendId: inviteFriend._id,
+        roomCode: roomCode,
+      }, (response) => {
+        if (response.success) {
+          // Only mark as sent on success
+          inviteSentRef.current = true;
+          addToast(`Invite sent to ${inviteFriend.username}`, 'success');
+        } else {
+          addToast(response.message || 'Failed to send invite', 'error');
+        }
+      });
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [socket, connected, roomCode, room, inviteFriend, addToast]);
+
   useEffect(() => {
     if (!socket || !roomCode) return;
     
@@ -128,13 +166,18 @@ const RoomWaitingPage = () => {
       }));
     };
 
+    const onRoomClosed = (data) => {
+      // Host left - go back to home
+      navigate('/home');
+    };
+
     socket.on('player-joined', onPlayerJoined);
     socket.on('player-left', onPlayerLeft);
+    socket.on('room-closed', onRoomClosed);
 
     return () => {
       socket.off('player-joined', onPlayerJoined);
-      socket.off('player-left', onPlayerLeft);
-    };
+      socket.off('player-left', onPlayerLeft);    socket.off('room-closed', onRoomClosed);    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, roomCode, connected, storeIsHost]);
 
@@ -294,7 +337,20 @@ const RoomWaitingPage = () => {
                 <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                 <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
               </div>
-              <p className="text-slate-400 text-sm">Share the room code with your friend</p>
+              <p className="text-slate-400 text-sm mb-4">Share the room code with your friend</p>
+              
+              {/* Invite Friend Button */}
+              {isHost && (
+                <button
+                  onClick={() => setShowInviteModal(true)}
+                  className="px-6 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-400 transition-all flex items-center gap-2 mx-auto"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path d="M6.25 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM3.25 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM19.75 7.5a.75.75 0 00-1.5 0v2.25H16a.75.75 0 000 1.5h2.25v2.25a.75.75 0 001.5 0v-2.25H22a.75.75 0 000-1.5h-2.25V7.5z" />
+                  </svg>
+                  Invite Friend
+                </button>
+              )}
             </div>
           ) : (
             <div className="text-center py-4">
@@ -334,6 +390,14 @@ const RoomWaitingPage = () => {
           </button>
         </footer>
       </div>
+
+      {/* Invite Friend Modal */}
+      {showInviteModal && (
+        <InviteFriendModal
+          onClose={() => setShowInviteModal(false)}
+          roomCode={roomCode}
+        />
+      )}
     </div>
   );
 };

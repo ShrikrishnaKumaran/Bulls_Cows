@@ -108,25 +108,10 @@ const getRoomByCode = async (roomCode) => {
   return room;
 };
 
-// Update room status
-const updateRoomStatus = async (roomCode, status) => {
-  const room = await Room.findOne({ roomCode });
-
-  if (!room) {
-    throw new Error('Room not found');
-  }
-
-  room.status = status;
-  await room.save();
-
-  return room;
-};
-
 module.exports = {
   generateRoomCode,
   createRoom,
   joinRoom,
   leaveRoom,
   getRoomByCode,
-  updateRoomStatus,
 };

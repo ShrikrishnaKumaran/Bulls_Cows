@@ -32,7 +32,7 @@ const TimerBar = ({ timer, maxTime = TIMER.MAX_TIME_HARD }) => {
       {/* Bar */}
       <div className="w-full h-2.5 bg-slate-700/80 rounded-full overflow-hidden shadow-inner">
         <div
-          className="h-full bg-gradient-to-r from-green-500 via-yellow-400 to-orange-500 transition-all duration-1000 ease-linear rounded-full shadow-lg"
+          className="h-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 transition-all duration-1000 ease-linear rounded-full shadow-lg"
           style={{ width: `${percentage}%` }}
         />
       </div>

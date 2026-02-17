@@ -43,7 +43,7 @@ const validateInput = (str, digits = 4) => {
  * Calculate Bulls and Cows for a guess against a secret
  * @param {string} secret - The secret number to guess
  * @param {string} guess - The player's guess
- * @param {number} digits - Number of digits (3 or 4, default 4)
+ * @param {number} digits - Number of digits (3 or 4, default 3)
  * @returns {object} - {bulls: number, cows: number, shit: number, isWin: boolean, error: string}
  */
 const calculateBullsAndCows = (secret, guess, digits = 4) => {
@@ -108,26 +108,7 @@ const calculateBullsAndCows = (secret, guess, digits = 4) => {
   };
 };
 
-/**
- * Generate a random secret number with unique digits
- * @param {number} digits - Number of digits (3 or 4)
- * @returns {string} - Random number with unique digits
- */
-const generateSecret = (digits = 4) => {
-  const availableDigits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  const secret = [];
-
-  for (let i = 0; i < digits; i++) {
-    const randomIndex = Math.floor(Math.random() * availableDigits.length);
-    secret.push(availableDigits[randomIndex]);
-    availableDigits.splice(randomIndex, 1);
-  }
-
-  return secret.join('');
-};
-
 module.exports = {
   calculateBullsAndCows,
   validateInput,
-  generateSecret
 };

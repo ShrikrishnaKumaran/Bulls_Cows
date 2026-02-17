@@ -1,34 +1,6 @@
-/**
- * ============================================================
- * Lobby Handler - Room Management via Socket.io
- * ============================================================
- * 
- * Manages game room operations:
- * - Creating rooms with custom settings
- * - Joining rooms by code
- * - Leaving rooms (cleanup)
- * - Getting room information
- * - In-room chat messaging
- * 
- * Socket Events Handled:
- * - create-room: Host creates a new game room
- * - join-room: Player joins an existing room
- * - leave-room: Player leaves the room
- * - get-room: Get room details
- * - room-message: Chat within the room
- * - player-ready: Signal ready status
- */
-
 const roomService = require('../services/roomService');
-const gameManager = require('./gameManager');
+const { stopTimer } = require('./timerManager');
 
-/**
- * Initialize lobby handler for a socket connection
- * @param {SocketIO.Server} io - Socket.io server instance
- * @param {SocketIO.Socket} socket - Connected client socket
- * @param {Object} activeGames - In-memory game state storage
- * @param {Function} getUserSocketId - Function to get socket ID by user ID
- */
 module.exports = (io, socket, activeGames, getUserSocketId) => {
   
   // ─────────────────────────────────────────────────────────────
@@ -122,6 +94,7 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
         secrets: {},
         currentTurn: null,
         logs: [],
+        guessCounter: 0, // For ordering guesses correctly
         roundNumber: 1,
         scores: { [hostId]: 0, [opponentId]: 0 },
         playerSockets: {
@@ -175,7 +148,7 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
         const winnerId = isHost ? game.opponent.oderId : game.host.oderId;
         
         // Stop any running timer
-        gameManager.stopTimer(roomCode);
+        stopTimer(roomCode);
         
         // Notify the opponent that they won
         socket.to(roomCode).emit('game-over', {
@@ -193,8 +166,15 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
       // Leave the socket.io room
       socket.leave(roomCode);
       
-      // Notify others if room still exists (lobby state)
-      if (!result.deleted && (!game || game.status === 'LOBBY')) {
+      // Check if host left in LOBBY state - close room and kick opponent
+      if (game && game.host.oderId === leavingUserId) {
+        // Host left - notify opponent to go home
+        socket.to(roomCode).emit('room-closed', {
+          reason: 'host_left',
+          message: 'Host has left the room',
+        });
+      } else if (!result.deleted && (!game || game.status === 'LOBBY')) {
+        // Opponent left in lobby - notify host
         socket.to(roomCode).emit('player-left', {
           oderId: socket.user._id,
         });
@@ -254,5 +234,78 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
     socket.to(roomCode).emit('player-ready', {
       oderId: socket.user._id,
     });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // EVENT: send-game-invite
+  // Send a game invitation to a friend
+  // Data: { friendId, roomCode }
+  // ─────────────────────────────────────────────────────────────
+  socket.on('send-game-invite', async (data, callback) => {
+    const { friendId, roomCode } = data;
+    
+    console.log('[Lobby] Send invite request:', { friendId, roomCode, from: socket.user.username });
+    
+    try {
+      // Get the friend's socket ID to send them the invite
+      const friendSocketId = getUserSocketId(friendId);
+      
+      console.log('[Lobby] Friend socket ID:', friendSocketId);
+      
+      if (!friendSocketId) {
+        console.log('[Lobby] Friend is offline - no socket ID found');
+        return callback({ 
+          success: false, 
+          message: 'Friend is offline' 
+        });
+      }
+      
+      // Get room info to include in invite
+      const room = await roomService.getRoomByCode(roomCode);
+      if (!room) {
+        return callback({ 
+          success: false, 
+          message: 'Room not found' 
+        });
+      }
+      
+      // Send invite directly to friend's socket
+      console.log('[Lobby] Emitting game-invite to socket:', friendSocketId);
+      io.to(friendSocketId).emit('game-invite', {
+        from: {
+          _id: socket.user._id,
+          username: socket.user.username,
+        },
+        roomCode: roomCode,
+        format: room.format,
+        digits: room.digits,
+        difficulty: room.difficulty,
+        timestamp: new Date(),
+      });
+      
+      console.log('[Lobby] Invite emitted successfully');
+      callback({ success: true, message: 'Invite sent' });
+    } catch (error) {
+      console.error('[Lobby] Send invite error:', error.message);
+      callback({ success: false, message: error.message });
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // EVENT: decline-game-invite
+  // Notify inviter that invite was declined
+  // ─────────────────────────────────────────────────────────────
+  socket.on('decline-game-invite', async (data) => {
+    const { inviterId } = data;
+    
+    const inviterSocketId = getUserSocketId(inviterId);
+    if (inviterSocketId) {
+      io.to(inviterSocketId).emit('invite-declined', {
+        by: {
+          _id: socket.user._id,
+          username: socket.user.username,
+        },
+      });
+    }
   });
 };

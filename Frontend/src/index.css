@@ -98,3 +98,26 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari, Opera */
 }
+
+/* Bounce-in animation for game invites */
+@keyframes bounceIn {
+  0% {
+    transform: translateY(-100%) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(10%) scale(1.02);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(-5%) scale(0.99);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.5s ease-out forwards;
+}

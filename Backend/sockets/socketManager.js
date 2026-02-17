@@ -1,27 +1,9 @@
-/**
- * ============================================================
- * Socket Manager - WebSocket Server Configuration
- * ============================================================
- * 
- * Manages Socket.io server initialization and authentication:
- * - CORS configuration for frontend communication
- * - JWT-based authentication middleware
- * - User-socket mapping for targeted messaging
- * - Handler registration (lobby, game)
- * 
- * Exports:
- * - initializeSocket(server): Start the WebSocket server
- * - getIO(): Get the Socket.io instance
- * - getUserSocketId(userId): Get socket ID for a user
- * - getActiveGames(): Get active games storage
- */
-
 const socketIO = require('socket.io');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const lobbyHandler = require('./lobbyHandler');
 const gameHandler = require('./gameHandler');
-const gameManager = require('./gameManager');
+const { stopTimer } = require('./timerManager');
 
 // Socket.io server instance
 let io;
@@ -100,19 +82,35 @@ const initializeSocket = (server) => {
   // ─────────────────────────────────────────────────────────────
   // Connection Handler
   // ─────────────────────────────────────────────────────────────
-  io.on('connection', (socket) => {
+  io.on('connection', async (socket) => {
     const oderId = socket.user._id.toString();
     
     // Track user's socket connection
     userSockets.set(oderId, socket.id);
+    console.log('[Socket] User connected:', socket.user.username, 'ID:', oderId, 'SocketID:', socket.id);
+    console.log('[Socket] Current userSockets map:', Array.from(userSockets.entries()));
+    
+    // Update user's online status in database
+    try {
+      await User.findByIdAndUpdate(oderId, { isOnline: true });
+    } catch (err) {
+      console.error('[Socket] Failed to update online status:', err.message);
+    }
 
     // Register event handlers
     lobbyHandler(io, socket, activeGames, getUserSocketId);
     gameHandler(io, socket, activeGames);
 
     // Handle disconnection
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       userSockets.delete(oderId);
+      
+      // Update user's online status in database
+      try {
+        await User.findByIdAndUpdate(oderId, { isOnline: false });
+      } catch (err) {
+        console.error('[Socket] Failed to update offline status:', err.message);
+      }
       
       // Check activeGames for any game this user is in
       for (const roomCode in activeGames) {
@@ -130,7 +128,7 @@ const initializeSocket = (server) => {
             const winnerName = isHost ? 'Opponent' : socket.user.username;
             
             // Stop any running timer
-            gameManager.stopTimer(roomCode);
+            stopTimer(roomCode);
             
             // Mark game as over
             game.status = 'GAME_OVER';
@@ -178,7 +176,11 @@ const getIO = () => {
  * @returns {string|undefined} Socket ID or undefined if user offline
  */
 const getUserSocketId = (oderId) => {
-  return userSockets.get(oderId.toString());
+  const id = oderId.toString();
+  const socketId = userSockets.get(id);
+  console.log('[Socket] getUserSocketId called with:', id, '-> Found:', socketId);
+  console.log('[Socket] All stored sockets:', Array.from(userSockets.entries()));
+  return socketId;
 };
 
 /**

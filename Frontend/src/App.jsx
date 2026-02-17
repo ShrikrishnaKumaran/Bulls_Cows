@@ -24,6 +24,7 @@ import OnlineSetupPage from './pages/online/OnlineSetupPage'
 
 // UI Components
 import ToastContainer from './components/ui/ToastContainer'
+import GameInviteNotification from './components/lobby/GameInviteNotification'
 
 // Store
 import useAuthStore from './store/useAuthStore'
@@ -68,6 +69,9 @@ function App() {
     <BrowserRouter>
       {/* Global Toast Notifications */}
       <ToastContainer />
+      
+      {/* Global Game Invite Notifications */}
+      <GameInviteNotification />
       
       <Routes>
         <Route path="/" element={<Navigate to="/auth" replace />} />

@@ -96,7 +96,7 @@ export function PrimaryButton({ children, onClick, disabled = false, loading = f
  */
 export function TabSwitcher({ activeTab, onTabChange }) {
   return (
-    <div className="relative flex bg-surface-dark rounded-full p-1 w-full max-w-xs mx-auto">
+    <div className="relative flex bg-slate-900 rounded-full p-1 w-full max-w-xs mx-auto">
       <div
         className={`
           absolute top-1 bottom-1 w-[calc(50%-4px)] bg-primary rounded-full

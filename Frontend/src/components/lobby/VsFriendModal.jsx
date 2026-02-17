@@ -18,7 +18,6 @@ const CloseIcon = () => (
 
 function VsFriendModal({ onClose }) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('matchCode');
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
@@ -89,40 +88,17 @@ function VsFriendModal({ onClose }) {
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-slate-700">
-          <button
-            onClick={() => setActiveTab('matchCode')}
-            className={`flex-1 py-3 text-sm font-semibold uppercase tracking-wider transition-colors
-              ${activeTab === 'matchCode' 
-                ? 'text-primary border-b-2 border-primary' 
-                : 'text-slate-400 hover:text-white'
-              }`}
-          >
-            Match Code
-          </button>
-          <button
-            onClick={() => setActiveTab('inviteFriend')}
-            className={`flex-1 py-3 text-sm font-semibold uppercase tracking-wider transition-colors
-              ${activeTab === 'inviteFriend' 
-                ? 'text-primary border-b-2 border-primary' 
-                : 'text-slate-400 hover:text-white'
-              }`}
-          >
-            Invite Friend
-          </button>
-        </div>
+
 
         {/* Content */}
         <div className="p-6">
-          {activeTab === 'matchCode' && (
-            <div className="space-y-6">
-              {/* Error Message */}
-              {error && (
-                <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl text-sm">
-                  {error}
-                </div>
-              )}
+          <div className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl text-sm">
+                {error}
+              </div>
+            )}
 
               {/* Create Room Section */}
               <div className="bg-[#111827] rounded-xl p-4 border border-slate-700">
@@ -166,16 +142,6 @@ function VsFriendModal({ onClose }) {
                 </button>
               </div>
             </div>
-          )}
-
-          {activeTab === 'inviteFriend' && (
-            <div className="text-center py-8">
-              <p className="text-slate-400 mb-2">Friend invitation feature coming soon...</p>
-              <p className="text-slate-500 text-sm">
-                (Will show your friends with online status and invite buttons)
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>

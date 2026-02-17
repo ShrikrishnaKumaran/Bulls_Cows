@@ -74,12 +74,12 @@ const OnlineGamePage = () => {
   const myName = players.me.name || user?.username || 'You';
   const opponentName = players.opponent.name || 'Opponent';
   
-  // Combine logs for GameArena (chronological order)
+  // Combine logs for GameArena (chronological order by guessNumber)
   const combinedLogs = useMemo(() => {
     const myLogs = gameData.myLogs.map(log => ({ ...log, player: 'me' }));
     const oppLogs = gameData.opponentLogs.map(log => ({ ...log, player: 'opponent' }));
     return [...myLogs, ...oppLogs].sort((a, b) => 
-      new Date(a.timestamp) - new Date(b.timestamp)
+      (a.guessNumber || 0) - (b.guessNumber || 0)
     );
   }, [gameData.myLogs, gameData.opponentLogs]);
   

@@ -357,7 +357,7 @@ const useOnlineGameStore = create((set, get) => ({
   requestGameState: (callback) => {
     const socket = getSocket();
     const { roomCode, players } = get();
-    const myId = players.me.oderId;
+    const myId = String(players.me.oderId || '');
     
     socket.emit('game-init', { roomCode }, (response) => {
       if (response.success) {
@@ -368,7 +368,7 @@ const useOnlineGameStore = create((set, get) => ({
           gameData: {
             ...get().gameData,
             currentTurnId: gameState.currentTurn,
-            turn: gameState.currentTurn === myId ? 'me' : 'opponent',
+            turn: String(gameState.currentTurn) === myId ? 'me' : 'opponent',
             roundNumber: gameState.roundNumber,
           },
         });
@@ -419,13 +419,13 @@ const useOnlineGameStore = create((set, get) => ({
         const currentState = get();
       
         // Get current user ID from AUTH STORE (most reliable source)
-        const myUserId = getMyUserId();
+        const myUserId = String(getMyUserId() || '');
         
-        // Extract IDs from event data
-        const hostId = data.host?._id || data.host;
-        const opponentId = data.opponent?._id || data.opponent;
+        // Extract IDs from event data - ensure string conversion for reliable comparison
+        const hostId = String(data.host?._id || data.host || '');
+        const opponentId = String(data.opponent?._id || data.opponent || '');
         
-        // Determine if we're host by comparing with auth user ID
+        // Determine if we're host by comparing with auth user ID (string comparison)
         const amIHost = myUserId === hostId;
         
         set({
@@ -470,14 +470,14 @@ const useOnlineGameStore = create((set, get) => ({
       
       // Match starting (both secrets submitted)
       socket.on('match-start', (data) => {
-        // Use auth store for reliable user ID
-        const myId = getMyUserId() || get().players.me.oderId;
+        // Use auth store for reliable user ID - ensure string comparison
+        const myId = String(getMyUserId() || get().players.me.oderId || '');
         set({
           status: 'PLAYING',
           gameData: {
             ...get().gameData,
             currentTurnId: data.currentTurn,
-            turn: data.currentTurn === myId ? 'me' : 'opponent',
+            turn: String(data.currentTurn) === myId ? 'me' : 'opponent',
             roundNumber: data.roundNumber,
             timer: data.timerDuration || TIMER_DURATION,
             myLogs: [],
@@ -488,9 +488,9 @@ const useOnlineGameStore = create((set, get) => ({
       
       // Turn result received
       socket.on('turn-result', (data) => {
-        // Use auth store for reliable user ID
-        const myId = getMyUserId() || get().players.me.oderId;
-        const isMyGuess = data.player === myId;
+        // Use auth store for reliable user ID - ensure string comparison
+        const myId = String(getMyUserId() || get().players.me.oderId || '');
+        const isMyGuess = String(data.player) === myId;
         
         const logEntry = {
           id: `${data.player}-${Date.now()}`,
@@ -499,6 +499,7 @@ const useOnlineGameStore = create((set, get) => ({
           bulls: data.bulls,
           cows: data.cows,
           shit: data.shit,
+          guessNumber: data.guessNumber,
           timestamp: data.timestamp,
         };
         
@@ -506,7 +507,7 @@ const useOnlineGameStore = create((set, get) => ({
           gameData: {
             ...state.gameData,
             currentTurnId: data.nextTurn,
-            turn: data.nextTurn === myId ? 'me' : 'opponent',
+            turn: String(data.nextTurn) === myId ? 'me' : 'opponent',
             timer: TIMER_DURATION, // Reset timer
             myLogs: isMyGuess 
               ? [...state.gameData.myLogs, logEntry] 
@@ -530,25 +531,24 @@ const useOnlineGameStore = create((set, get) => ({
       
       // Turn skipped due to timeout
       socket.on('turn-skipped', (data) => {
-        // Use auth store for reliable user ID
-        const myId = getMyUserId() || get().players.me.oderId;
+        // Use auth store for reliable user ID - ensure string comparison
+        const myId = String(getMyUserId() || get().players.me.oderId || '');
         set((state) => ({
           gameData: {
             ...state.gameData,
             currentTurnId: data.nextTurn,
-            turn: data.nextTurn === myId ? 'me' : 'opponent',
+            turn: String(data.nextTurn) === myId ? 'me' : 'opponent',
             timer: TIMER_DURATION,
           },
         }));
       });
       
-      // Round over (best-of format)
       // Round over (best-of format) - show round winner screen first
       socket.on('round-over', (data) => {
-        // Use auth store for reliable user ID
-        const myId = getMyUserId() || get().players.me.oderId;
+        // Use auth store for reliable user ID - ensure string for comparison
+        const myId = String(getMyUserId() || get().players.me.oderId || '');
         const { players } = get();
-        const oppId = players.opponent.oderId;
+        const oppId = String(players.opponent.oderId || '');
         
         // Calculate scores - try both myId lookup and fallback
         const myScore = data.scores[myId] ?? data.scores[oppId] ?? 0;
@@ -565,7 +565,7 @@ const useOnlineGameStore = create((set, get) => ({
         let calculatedOppScore = 0;
         
         for (const [oderId, score] of scoreEntries) {
-          if (oderId === myId) {
+          if (String(oderId) === myId) {
             calculatedMyScore = score;
           } else {
             calculatedOppScore = score;
@@ -575,7 +575,7 @@ const useOnlineGameStore = create((set, get) => ({
         // First show ROUND_OVER status with winner info
         set({
           status: 'ROUND_OVER',
-          roundWinner: data.roundWinner === myId ? 'me' : 'opponent',
+          roundWinner: String(data.roundWinner) === myId ? 'me' : 'opponent',
           roundWinnerName: data.roundWinnerName,
           gameData: {
             ...get().gameData,
@@ -611,10 +611,10 @@ const useOnlineGameStore = create((set, get) => ({
       
       // Game over
       socket.on('game-over', (data) => {
-        // Use auth store for reliable user ID
-        const myId = getMyUserId() || get().players.me.oderId;
+        // Use auth store for reliable user ID - ensure string for comparison
+        const myId = String(getMyUserId() || get().players.me.oderId || '');
         const { players } = get();
-        const oppId = players.opponent.oderId;
+        const oppId = String(players.opponent.oderId || '');
         
         // More robust score calculation from finalScores object
         let calculatedMyScore = 0;
@@ -623,7 +623,7 @@ const useOnlineGameStore = create((set, get) => ({
         if (data.finalScores) {
           const scoreEntries = Object.entries(data.finalScores);
           for (const [oderId, score] of scoreEntries) {
-            if (oderId === myId) {
+            if (String(oderId) === myId) {
               calculatedMyScore = score;
             } else {
               calculatedOppScore = score;
@@ -633,7 +633,7 @@ const useOnlineGameStore = create((set, get) => ({
         
         set({
           status: 'GAME_OVER',
-          winner: data.winner === myId ? 'me' : 'opponent',
+          winner: String(data.winner) === myId ? 'me' : 'opponent',
           winnerName: data.winnerName,
           gameOverReason: data.reason || 'win',
           gameData: {

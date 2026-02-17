@@ -267,9 +267,6 @@ export default function AuthPage() {
 
         <TechFooter />
 
-        <div className="mt-4 text-center">
-          <span className="text-xs text-slate-600">v1.0.0 • Built with ❤️</span>
-        </div>
       </div>
     </div>
   );
