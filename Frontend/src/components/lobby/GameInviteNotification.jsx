@@ -34,16 +34,24 @@ function GameInviteNotification() {
     }, 30000);
   }, []);
 
-  // Setup socket listener - with retry mechanism
+  // Setup socket listener - handles reconnection properly
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
     let socket = null;
-    let retryInterval = null;
+    let checkInterval = null;
 
-    const setupListener = () => {
-      // Try to get socket
+    const attachListener = (sock) => {
+      if (!sock) return;
+      // Remove existing listener first to avoid duplicates
+      sock.off('game-invite', handleGameInvite);
+      sock.on('game-invite', handleGameInvite);
+      console.log('[GameInvite] Attached game-invite listener to socket:', sock.id);
+      listenerAttached.current = true;
+    };
+
+    const setupSocket = () => {
       try {
         if (isSocketConnected()) {
           socket = getSocket();
@@ -54,44 +62,41 @@ function GameInviteNotification() {
         socket = initializeSocket(token);
       }
 
-      if (socket && !listenerAttached.current) {
-        console.log('[GameInvite] Attaching game-invite listener');
-        socket.on('game-invite', handleGameInvite);
-        listenerAttached.current = true;
+      if (socket) {
+        // Attach listener immediately
+        attachListener(socket);
         
-        // Clear retry interval once attached
-        if (retryInterval) {
-          clearInterval(retryInterval);
-          retryInterval = null;
-        }
+        // Also attach listener on every reconnect
+        socket.on('connect', () => {
+          console.log('[GameInvite] Socket reconnected, reattaching listener');
+          attachListener(socket);
+        });
       }
     };
 
     // Try immediately
-    setupListener();
+    setupSocket();
 
-    // If not attached, retry every second for 10 seconds
-    if (!listenerAttached.current) {
-      retryInterval = setInterval(() => {
-        if (!listenerAttached.current) {
-          setupListener();
-        } else {
-          clearInterval(retryInterval);
-        }
-      }, 1000);
+    // Keep checking in case socket isn't ready yet
+    checkInterval = setInterval(() => {
+      if (!listenerAttached.current) {
+        setupSocket();
+      } else {
+        clearInterval(checkInterval);
+        checkInterval = null;
+      }
+    }, 1000);
 
-      // Stop retrying after 10 seconds
-      setTimeout(() => {
-        if (retryInterval) {
-          clearInterval(retryInterval);
-        }
-      }, 10000);
-    }
+    // Stop checking after 10 seconds
+    setTimeout(() => {
+      if (checkInterval) clearInterval(checkInterval);
+    }, 10000);
 
     return () => {
-      if (retryInterval) clearInterval(retryInterval);
-      if (socket && listenerAttached.current) {
+      if (checkInterval) clearInterval(checkInterval);
+      if (socket) {
         socket.off('game-invite', handleGameInvite);
+        socket.off('connect');
         listenerAttached.current = false;
       }
     };

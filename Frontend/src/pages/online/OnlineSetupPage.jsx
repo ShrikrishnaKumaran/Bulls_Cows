@@ -140,8 +140,11 @@ const OnlineSetupPage = () => {
       
       {/* Connection status banner - only show if disconnected after initial load */}
       {!connected && !error && !isInitializing && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500/90 text-black px-4 py-3 text-center text-sm">
-          Reconnecting to server...
+        <div className="fixed top-0 left-0 right-0 z-50 bg-slate-800/95 text-slate-300 px-4 py-2 text-center text-sm border-b border-slate-700">
+          <span className="inline-flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+            Reconnecting to server...
+          </span>
         </div>
       )}
       

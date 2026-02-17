@@ -24,10 +24,12 @@ export const initializeSocket = (token) => {
     },
     autoConnect: true,
     reconnection: true,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: Infinity, // Keep trying to reconnect
     reconnectionDelay: 1000,
-    timeout: 20000, // Increased timeout for Render cold starts
+    reconnectionDelayMax: 5000,
+    timeout: 30000, // Increased timeout for Render cold starts
     transports: ['websocket', 'polling'], // Try websocket first, fall back to polling
+    forceNew: false,
   });
 
   socket.on('connect', () => {
