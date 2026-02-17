@@ -164,7 +164,25 @@ const useOnlineGameStore = create((set, get) => ({
       
       set({ loading: true, error: null });
       
+      // Add timeout for the callback
+      let callbackCalled = false;
+      const timeoutId = setTimeout(() => {
+        if (!callbackCalled) {
+          callbackCalled = true;
+          console.warn('[OnlineGameStore] createRoom timed out');
+          set({ loading: false, error: 'Request timed out. Server may be starting up - please try again.' });
+          if (callback) callback({ success: false, message: 'Request timed out. Server may be starting up - please try again.' });
+        }
+      }, 20000); // 20 second timeout for cold starts
+      
+      console.log('[OnlineGameStore] Emitting create-room:', config);
+      
       socket.emit('create-room', config, (response) => {
+        console.log('[OnlineGameStore] create-room response:', response);
+        if (callbackCalled) return; // Already timed out
+        callbackCalled = true;
+        clearTimeout(timeoutId);
+        
         set({ loading: false });
         
         if (response.success) {
@@ -230,17 +248,21 @@ const useOnlineGameStore = create((set, get) => ({
       
       set({ loading: true, error: null });
       
-      // Add timeout for the callback
+      // Add timeout for the callback - longer timeout for cold starts
       let callbackCalled = false;
       const timeoutId = setTimeout(() => {
         if (!callbackCalled) {
           callbackCalled = true;
-          set({ loading: false, error: 'Request timed out. Please try again.' });
-          if (callback) callback({ success: false, message: 'Request timed out. Please try again.' });
+          console.warn('[OnlineGameStore] joinRoom timed out');
+          set({ loading: false, error: 'Request timed out. Server may be starting up - please try again.' });
+          if (callback) callback({ success: false, message: 'Request timed out. Server may be starting up - please try again.' });
         }
-      }, 15000); // 15 second timeout
+      }, 20000); // 20 second timeout for cold starts
+      
+      console.log('[OnlineGameStore] Emitting join-room for code:', code);
       
       socket.emit('join-room', code, (response) => {
+        console.log('[OnlineGameStore] join-room response:', response);
         if (callbackCalled) return; // Already timed out
         callbackCalled = true;
         clearTimeout(timeoutId);

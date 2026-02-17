@@ -4,16 +4,17 @@
  * Listens for 'game-invite' socket events and shows a popup.
  * User can accept (join room) or decline the invite.
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSocket, initializeSocket, isSocketConnected } from '../../services/socket';
 import useOnlineGameStore from '../../store/useOnlineGameStore';
+import useAuthStore from '../../store/useAuthStore';
 
 function GameInviteNotification() {
   const [invite, setInvite] = useState(null);
   const [joining, setJoining] = useState(false);
-  const listenerAttached = useRef(false);
   const navigate = useNavigate();
+  const { isAuthenticated, token } = useAuthStore();
   
   const { joinRoom, setupListeners, removeListeners, resetState } = useOnlineGameStore();
 
@@ -34,73 +35,56 @@ function GameInviteNotification() {
     }, 30000);
   }, []);
 
-  // Setup socket listener - handles reconnection properly
+  // Setup socket listener - using interval to always keep listener attached
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!isAuthenticated || !token) return;
 
-    let socket = null;
-    let checkInterval = null;
+    let intervalId = null;
+    let currentSocketId = null;
 
-    const attachListener = (sock) => {
-      if (!sock) return;
-      // Remove existing listener first to avoid duplicates
-      sock.off('game-invite', handleGameInvite);
-      sock.on('game-invite', handleGameInvite);
-      console.log('[GameInvite] Attached game-invite listener to socket:', sock.id);
-      listenerAttached.current = true;
-    };
-
-    const setupSocket = () => {
+    const ensureListener = () => {
+      let socket;
       try {
-        if (isSocketConnected()) {
-          socket = getSocket();
-        } else {
-          socket = initializeSocket(token);
-        }
+        socket = isSocketConnected() ? getSocket() : initializeSocket(token);
       } catch (e) {
-        socket = initializeSocket(token);
+        try {
+          socket = initializeSocket(token);
+        } catch {
+          return;
+        }
       }
 
-      if (socket) {
-        // Attach listener immediately
-        attachListener(socket);
-        
-        // Also attach listener on every reconnect
-        socket.on('connect', () => {
-          console.log('[GameInvite] Socket reconnected, reattaching listener');
-          attachListener(socket);
-        });
+      if (!socket) return;
+
+      // If socket changed or reconnected, reattach listener
+      if (socket.id !== currentSocketId) {
+        // Remove from old socket if exists
+        socket.off('game-invite', handleGameInvite);
+        // Add to current socket
+        socket.on('game-invite', handleGameInvite);
+        currentSocketId = socket.id;
+        console.log('[GameInvite] Listener attached to socket:', socket.id);
       }
     };
 
-    // Try immediately
-    setupSocket();
+    // Check immediately
+    ensureListener();
 
-    // Keep checking in case socket isn't ready yet
-    checkInterval = setInterval(() => {
-      if (!listenerAttached.current) {
-        setupSocket();
-      } else {
-        clearInterval(checkInterval);
-        checkInterval = null;
-      }
-    }, 1000);
-
-    // Stop checking after 10 seconds
-    setTimeout(() => {
-      if (checkInterval) clearInterval(checkInterval);
-    }, 10000);
+    // Keep checking every 2 seconds (handles reconnections)
+    intervalId = setInterval(ensureListener, 2000);
 
     return () => {
-      if (checkInterval) clearInterval(checkInterval);
-      if (socket) {
-        socket.off('game-invite', handleGameInvite);
-        socket.off('connect');
-        listenerAttached.current = false;
+      if (intervalId) clearInterval(intervalId);
+      try {
+        const socket = getSocket();
+        if (socket) {
+          socket.off('game-invite', handleGameInvite);
+        }
+      } catch {
+        // Socket might not exist
       }
     };
-  }, [handleGameInvite]);
+  }, [isAuthenticated, token, handleGameInvite]);
 
   const handleAccept = async () => {
     if (!invite) return;

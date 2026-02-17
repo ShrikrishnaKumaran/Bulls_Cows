@@ -17,14 +17,14 @@ const SetupStepper = ({ currentStep }) => {
   ];
 
   return (
-    <div className="flex items-center justify-center mb-8 px-2">
+    <div className="flex items-center justify-center mb-4 px-2">
       {steps.map((step, i) => (
         <div key={step.num} className="flex items-center">
           {/* Step Node */}
           <div className="flex flex-col items-center">
             <div
               className={`
-                w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
                 border-2 transition-all duration-300
                 ${step.num === currentStep
                   ? 'bg-primary text-black border-primary shadow-[0_0_20px_rgba(250,204,20,0.5)] ring-4 ring-primary/20'
@@ -38,7 +38,7 @@ const SetupStepper = ({ currentStep }) => {
             </div>
             <span
               className={`
-                text-[9px] mt-1.5 font-bold tracking-wider uppercase
+                text-[9px] mt-1 font-bold tracking-wider uppercase
                 ${step.num === currentStep
                   ? 'text-primary'
                   : step.num < currentStep

@@ -23,26 +23,26 @@ const ConfigStep = ({
       
       <div className="relative z-10 flex-1 flex flex-col max-w-md mx-auto w-full px-3 sm:px-4">
         {/* Header */}
-        <header className="py-4 pt-8 flex items-center gap-4">
+        <header className="py-2 pt-4 flex items-center gap-3">
           <button
             onClick={onBack}
             className="bg-white/5 p-2 rounded-full backdrop-blur-sm hover:bg-white/10 transition-all text-slate-300"
           >
             <BackIcon />
           </button>
-          <h1 className="text-lg font-bold text-white tracking-wider uppercase">Mission Briefing</h1>
+          <h1 className="text-base font-bold text-white tracking-wider uppercase">Mission Briefing</h1>
         </header>
 
         {/* Progress Line Stepper */}
         <SetupStepper currentStep={1} />
 
-        <main className="flex-1 overflow-y-auto pb-4">
+        <main className="flex-1 overflow-y-auto pb-2">
           {/* Section: Number of Digits */}
-          <div className="mb-6">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+          <div className="mb-3">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
               Target Complexity
             </h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <TechTile
                 icon={<HashIcon />}
                 label="3 Digits"
@@ -59,11 +59,11 @@ const ConfigStep = ({
           </div>
 
           {/* Section: Difficulty */}
-          <div className="mb-6">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+          <div className="mb-3">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
               Threat Level
             </h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <TechTile
                 icon={<ShieldCheckIcon />}
                 label="Easy"
@@ -82,11 +82,11 @@ const ConfigStep = ({
           </div>
 
           {/* Section: Match Format */}
-          <div className="mb-6">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+          <div className="mb-3">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
               Game Format
             </h3>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               <TechTile
                 icon={<TrophyIcon />}
                 label="BEST OF 1"
@@ -109,16 +109,16 @@ const ConfigStep = ({
           </div>
 
           {/* System Terminal - Info Panel */}
-          <div className="bg-black/50 border-l-4 border-primary p-4 rounded-r-lg font-mono text-xs">
-            <div className="text-primary/60 mb-2">{`> SYSTEM_CHECK_INIT...`}</div>
-            <div className="text-primary/80 space-y-1">
+          <div className="bg-black/50 border-l-4 border-primary p-2.5 rounded-r-lg font-mono text-[10px]">
+            <div className="text-primary/60 mb-1">{`> SYSTEM_CHECK_INIT...`}</div>
+            <div className="text-primary/80 space-y-0.5">
               <p>
                 {`> MODE: `}
                 <span className={config.difficulty === 'Hard' ? 'text-red-400' : 'text-green-400'}>
                   {config.difficulty.toUpperCase()}
                 </span>
                 {config.difficulty === 'Hard' 
-                  ? ' (30s Timer + 5 Guess History)' 
+                  ? ' (30s Timer + 5 History)' 
                   : ' (No Timer + Full History)'}
               </p>
               <p>
@@ -131,18 +131,17 @@ const ConfigStep = ({
                 <span className="text-white">
                   {config.format === 1 ? 'SINGLE MATCH' : `BEST OF ${config.format}`}
                 </span>
-                {config.format > 1 && ` (Race to ${Math.ceil(config.format / 2)} wins)`}
               </p>
             </div>
-            <div className="text-primary/40 mt-2">{`> READY_FOR_DEPLOYMENT...`}</div>
+            <div className="text-primary/40 mt-1">{`> READY_FOR_DEPLOYMENT...`}</div>
           </div>
         </main>
 
         {/* Cyber Launch Button */}
-        <footer className="py-4">
+        <footer className="py-3">
           <button
             onClick={onNext}
-            className="w-full py-4 rounded-xl bg-primary text-black font-bold text-base uppercase tracking-widest 
+            className="w-full py-3 rounded-xl bg-primary text-black font-bold text-sm uppercase tracking-widest 
               shadow-neon hover:shadow-neon-strong hover:translate-y-[-2px] 
               transition-all duration-200 active:scale-[0.98]"
           >

@@ -27,7 +27,7 @@ export const TechTile = ({ icon, label, selected, onClick, accentColor = 'primar
     <button
       onClick={onClick}
       className={`
-        bg-[#111827] border rounded-xl p-4 flex flex-col items-center justify-center gap-2
+        bg-[#111827] border rounded-xl p-2.5 flex flex-col items-center justify-center gap-1
         cursor-pointer transition-all duration-200 hover:border-slate-500 hover:brightness-110
         ${selected
           ? colors.selected
@@ -35,10 +35,10 @@ export const TechTile = ({ icon, label, selected, onClick, accentColor = 'primar
         }
       `}
     >
-      <div className={selected ? colors.icon : 'text-slate-500'}>
+      <div className={`${selected ? colors.icon : 'text-slate-500'} scale-90`}>
         {icon}
       </div>
-      <span className="text-xs font-bold uppercase tracking-wider">{label}</span>
+      <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
     </button>
   );
 };

@@ -45,13 +45,19 @@ const JoinRoomPage = () => {
     }
 
     if (!socket) {
-      setError('Socket connection not available');
+      setError('Socket connection not available. Please refresh.');
       return;
     }
 
     if (!connected) {
-      setError('Not connected to server. Reconnecting...');
+      setError('Connecting to server... Please wait.');
       reconnect();
+      // Auto retry after 2 seconds
+      setTimeout(() => {
+        if (socket?.connected) {
+          handleJoinRoom();
+        }
+      }, 2000);
       return;
     }
 

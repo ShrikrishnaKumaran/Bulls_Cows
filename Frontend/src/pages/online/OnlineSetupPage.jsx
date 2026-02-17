@@ -29,6 +29,7 @@ const OnlineSetupPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isInitializing, setIsInitializing] = useState(true);
+  const [showReconnecting, setShowReconnecting] = useState(false);
   const pendingAction = useRef(null);
 
   // Reset any previous game state and set up listeners on mount
@@ -42,6 +43,7 @@ const OnlineSetupPage = () => {
   useEffect(() => {
     if (connected) {
       setIsInitializing(false);
+      setShowReconnecting(false);
       setError(''); // Clear any connection errors
       
       // If there was a pending action (user clicked Next while connecting), execute it
@@ -51,6 +53,19 @@ const OnlineSetupPage = () => {
       }
     }
   }, [connected]);
+
+  // Show reconnecting banner only after 2 seconds of being disconnected
+  useEffect(() => {
+    let timer;
+    if (!connected && !isInitializing) {
+      timer = setTimeout(() => {
+        setShowReconnecting(true);
+      }, 2000);
+    } else {
+      setShowReconnecting(false);
+    }
+    return () => clearTimeout(timer);
+  }, [connected, isInitializing]);
 
   // Set a timeout for initial connection
   useEffect(() => {
@@ -153,23 +168,23 @@ const OnlineSetupPage = () => {
     <>
       {/* Connection error banner */}
       {error && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-red-500/90 text-white px-4 py-3 text-center text-sm">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-red-500/90 text-white px-3 py-2 text-center text-xs">
           {error}
           <button 
             onClick={() => setError('')}
-            className="ml-4 underline"
+            className="ml-3 underline"
           >
             Dismiss
           </button>
         </div>
       )}
       
-      {/* Connection status banner - only show if disconnected after initial load */}
-      {!connected && !error && !isInitializing && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-slate-800/95 text-slate-300 px-4 py-2 text-center text-sm border-b border-slate-700">
+      {/* Connection status banner - only show if disconnected for 2+ secs */}
+      {showReconnecting && !error && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-slate-800/95 text-slate-300 px-3 py-1.5 text-center text-xs border-b border-slate-700">
           <span className="inline-flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
-            Reconnecting to server...
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
+            Reconnecting...
           </span>
         </div>
       )}
