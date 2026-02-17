@@ -2,6 +2,8 @@
 
 A real-time multiplayer number guessing game with cyberpunk aesthetics.
 
+🌐 **[Play Now](https://bulls-cows-pied.vercel.app/)** | [API Docs](API_REFERENCE.md) | [WebSocket Docs](WEBSOCKET_EVENTS.md)
+
 ## 🎮 What is it?
 
 A classic pen-and-paper game reimagined for the web! Two players pick secret numbers and take turns guessing each other's secrets through logical deduction.
