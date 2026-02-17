@@ -1,7 +1,7 @@
 const roomService = require('../services/roomService');
 const { stopTimer } = require('./timerManager');
 
-module.exports = (io, socket, activeGames, getUserSocketId) => {
+module.exports = (io, socket, activeGames, getUserSocketId, emitToUser, isUserOnline) => {
   
   // ─────────────────────────────────────────────────────────────
   // EVENT: create-room
@@ -247,13 +247,9 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
     console.log('[Lobby] Send invite request:', { friendId, roomCode, from: socket.user.username });
     
     try {
-      // Get the friend's socket ID to send them the invite
-      const friendSocketId = getUserSocketId(friendId);
-      
-      console.log('[Lobby] Friend socket ID:', friendSocketId);
-      
-      if (!friendSocketId) {
-        console.log('[Lobby] Friend is offline - no socket ID found');
+      // Check if friend is online
+      if (!isUserOnline(friendId)) {
+        console.log('[Lobby] Friend is offline');
         return callback({ 
           success: false, 
           message: 'Friend is offline' 
@@ -269,9 +265,9 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
         });
       }
       
-      // Send invite directly to friend's socket
-      console.log('[Lobby] Emitting game-invite to socket:', friendSocketId);
-      io.to(friendSocketId).emit('game-invite', {
+      // Send invite to all of friend's devices
+      console.log('[Lobby] Emitting game-invite to user:', friendId);
+      emitToUser(friendId, 'game-invite', {
         from: {
           _id: socket.user._id,
           username: socket.user.username,
@@ -298,14 +294,12 @@ module.exports = (io, socket, activeGames, getUserSocketId) => {
   socket.on('decline-game-invite', async (data) => {
     const { inviterId } = data;
     
-    const inviterSocketId = getUserSocketId(inviterId);
-    if (inviterSocketId) {
-      io.to(inviterSocketId).emit('invite-declined', {
-        by: {
-          _id: socket.user._id,
-          username: socket.user.username,
-        },
-      });
-    }
+    // Notify all of inviter's devices
+    emitToUser(inviterId, 'invite-declined', {
+      by: {
+        _id: socket.user._id,
+        username: socket.user.username,
+      },
+    });
   });
 };

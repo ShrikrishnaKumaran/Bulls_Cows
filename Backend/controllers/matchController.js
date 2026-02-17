@@ -1,4 +1,4 @@
-const { getIO, getUserSocketId } = require('../sockets/socketManager');
+const { emitToUser, isUserOnline } = require('../sockets/socketManager');
 const User = require('../models/User');
 const { createRoom, joinRoom: joinRoomService, getRoomByCode } = require('../services/roomService');
 
@@ -101,13 +101,12 @@ exports.inviteToMatch = async (req, res) => {
       });
     }
 
-    // Send real-time notification via Socket.IO
-    const io = getIO();
-    const friendSocketId = getUserSocketId(friendId);
+    // Send real-time notification via Socket.IO to all of user's devices
+    const friendOnline = isUserOnline(friendId);
     
-    if (friendSocketId) {
-      // Friend is online, send invite notification
-      io.to(friendSocketId).emit('match-invite', {
+    if (friendOnline) {
+      // Friend is online, send invite notification to all their devices
+      emitToUser(friendId, 'match-invite', {
         roomCode: room.roomCode,
         host: {
           _id: userId,
@@ -121,9 +120,9 @@ exports.inviteToMatch = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: friendSocketId ? 'Invite sent successfully' : 'Invite sent (friend offline)',
+      message: friendOnline ? 'Invite sent successfully' : 'Invite sent (friend offline)',
       roomCode: room.roomCode,
-      friendOnline: !!friendSocketId
+      friendOnline: friendOnline
     });
   } catch (error) {
     // Handle room not found from service

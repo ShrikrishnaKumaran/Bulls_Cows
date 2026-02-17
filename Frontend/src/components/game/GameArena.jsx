@@ -26,7 +26,8 @@ function GameArena({
   opponentWins = 0,
   onPlayAgain,
   onQuit,
-  onBack
+  onBack,
+  isOnlineMode = false,
 }) {
   const [currentGuess, setCurrentGuess] = useState('0'.repeat(digits));
   const [error, setError] = useState('');
@@ -143,7 +144,7 @@ function GameArena({
               isMe={true}
               isActive={isMyTurn}
               attempts={myAttempts}
-              isCurrentUser={true}
+              isCurrentUser={isOnlineMode}
             />
             <PlayerCard
               name={opponentName}

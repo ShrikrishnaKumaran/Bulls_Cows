@@ -489,6 +489,7 @@ const OnlineGamePage = () => {
       onPlayAgain={handlePlayAgain}
       onQuit={handleQuit}
       onBack={handleBack}
+      isOnlineMode={true}
     />
   );
 };
