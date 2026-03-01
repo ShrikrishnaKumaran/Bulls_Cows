@@ -66,11 +66,11 @@ function HomePage() {
         <HomeHeader onLogout={handleLogout} />
 
         {/* ─── MAIN CONTENT ─── */}
-        <main className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8">
+        <main className="flex-1 flex flex-col items-center justify-center px-5 sm:px-6 pt-0 pb-5">
           <div className="w-full max-w-md">
             
             {/* Logo / Title */}
-            <div className="text-center mb-10">
+            <div className="text-center mb-12">
               <h1 className="text-4xl md:text-5xl font-bold glitch-text mb-3 tracking-tight">
                 <span className="text-white">BULLS</span>
                 <span className="text-primary mx-2">&</span>
@@ -85,7 +85,7 @@ function HomePage() {
             </div>
 
             {/* ─── GAME MODE BUTTONS (Presentation Components) ─── */}
-            <div className="space-y-4">
+            <div className="space-y-5">
               <GameModeCard
                 icon={<OfflineIcon />}
                 title="Pass & Play"
@@ -106,12 +106,11 @@ function HomePage() {
               
               <GameModeCard
                 icon={<BotIcon />}
-                title="VS Bot"
-                subtitle="Challenge the AI"
-                onClick={() => {}}
+                title="Bot Arena"
+                subtitle="Challenge the Bot"
+                onClick={() => navigate('/bot/setup')}
                 iconBgClass="bg-purple-500/10"
                 iconTextClass="text-purple-400"
-                disabled={true}
               />
             </div>
           </div>

@@ -24,6 +24,9 @@ router.get('/requests', friendController.getPendingRequests);
 // Get user by UID
 router.get('/user/:uid', friendController.getUserByUid);
 
+// Get user profile by MongoDB ID
+router.get('/profile/:userId', friendController.getUserById);
+
 // Send a friend request
 router.post('/request', friendController.sendRequest);
 

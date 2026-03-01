@@ -2,7 +2,7 @@ const socketIO = require('socket.io');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const lobbyHandler = require('./lobbyHandler');
-const gameHandler = require('./gameHandler');
+const { gameHandler, recordMatchResult } = require('./gameHandler');
 const { stopTimer } = require('./timerManager');
 
 // Socket.io server instance
@@ -163,7 +163,7 @@ const initializeSocket = (server) => {
           // Player was in an active game - opponent wins
           if (game.status === 'PLAYING' || game.status === 'SETUP') {
             const winnerId = isHost ? game.opponent.oderId : game.host.oderId;
-            const winnerName = isHost ? 'Opponent' : socket.user.username;
+            const loserId = isHost ? game.host.oderId : game.opponent.oderId;
             
             // Stop any running timer
             stopTimer(roomCode);
@@ -171,16 +171,25 @@ const initializeSocket = (server) => {
             // Mark game as over
             game.status = 'GAME_OVER';
             
+            console.log(`[Socket] Disconnect forfeit: ${socket.user.username} (${userId}) disconnected. isHost=${isHost}`);
+            console.log(`[Socket] Winner: ${winnerId}, Loser: ${loserId}`);
+            
             // Notify remaining player they won
             io.to(roomCode).emit('game-over', {
               winner: winnerId,
-              winnerName: isHost ? 'You' : winnerName,
               reason: 'disconnect',
               message: `${socket.user.username} disconnected. You win!`,
               finalScores: game.scores || { [game.host.oderId]: 0, [game.opponent.oderId]: 0 },
               hostId: game.host.oderId,
               opponentId: game.opponent.oderId,
             });
+
+            await recordMatchResult(
+              winnerId, loserId,
+              game.scores || { [game.host.oderId]: 0, [game.opponent.oderId]: 0 },
+              game.format, game.digits, game.difficulty,
+              game, 'disconnect-forfeit'
+            );
             
             // Cleanup game after 1 minute
             setTimeout(() => {

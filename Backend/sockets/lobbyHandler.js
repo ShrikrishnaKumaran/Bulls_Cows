@@ -1,5 +1,7 @@
 const roomService = require('../services/roomService');
 const { stopTimer } = require('./timerManager');
+const { recordMatchResult } = require('./gameHandler');
+const User = require('../models/User');
 
 module.exports = (io, socket, activeGames, getUserSocketId, emitToUser, isUserOnline) => {
   
@@ -103,6 +105,18 @@ module.exports = (io, socket, activeGames, getUserSocketId, emitToUser, isUserOn
         },
       };
       
+      console.log(`[Lobby] Game initialized for room ${roomCode}:`, {
+        host: { id: hostId, username: room.host?.username },
+        opponent: { id: opponentId, username: room.opponent?.username },
+        format: room.format,
+        digits: room.digits,
+        difficulty: room.difficulty,
+      });
+
+      console.log(`\n[GAME-INIT] Room ${roomCode} created`);
+      console.log(`[GAME-INIT] HOST: ${room.host?.username || 'unknown'} (${hostId})`);
+      console.log(`[GAME-INIT] OPPONENT: ${room.opponent?.username || 'unknown'} (${opponentId})\n`);
+      
       // Ensure both sockets are in the room
       const opponentSocketId = getUserSocketId(opponentId);
       
@@ -150,15 +164,24 @@ module.exports = (io, socket, activeGames, getUserSocketId, emitToUser, isUserOn
         // Stop any running timer
         stopTimer(roomCode);
         
+        console.log(`[Lobby] Leave-room forfeit: ${socket.user.username} (${leavingUserId}) left. isHost=${isHost}`);
+        console.log(`[Lobby] Winner: ${winnerId}, Loser: ${leavingUserId}`);
+        
         // Notify the opponent that they won
         socket.to(roomCode).emit('game-over', {
           winner: winnerId,
-          winnerName: isHost ? 'Opponent' : 'You',
           reason: 'opponent_quit',
           finalScores: game.scores || { [game.host.oderId]: 0, [game.opponent.oderId]: 0 },
           hostId: game.host.oderId,
           opponentId: game.opponent.oderId,
         });
+
+        await recordMatchResult(
+          winnerId, leavingUserId,
+          game.scores || { [game.host.oderId]: 0, [game.opponent.oderId]: 0 },
+          game.format, game.digits, game.difficulty,
+          game, 'leave-room-forfeit'
+        );
       }
       
       const result = await roomService.leaveRoom(roomCode, socket.user._id);

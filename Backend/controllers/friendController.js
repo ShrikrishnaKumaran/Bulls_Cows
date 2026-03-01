@@ -131,6 +131,39 @@ const getUserByUid = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Get user profile by MongoDB ID
+ * @route   GET /api/friends/profile/:userId
+ * @access  Private
+ */
+const getUserById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user._id.toString();
+    const user = await friendService.getUserById(userId);
+    
+    // Check friendship status
+    const currentUser = await require('../models/User').findById(currentUserId);
+    const isFriend = currentUser?.friends?.some(f => f.toString() === userId);
+    const hasPendingRequest = currentUser?.friendRequests?.outgoing?.some(
+      r => r.to.toString() === userId
+    );
+    const hasIncomingRequest = currentUser?.friendRequests?.incoming?.some(
+      r => r.from.toString() === userId
+    );
+    
+    res.status(200).json({
+      ...user.toObject(),
+      isFriend: !!isFriend,
+      hasPendingRequest: !!hasPendingRequest,
+      hasIncomingRequest: !!hasIncomingRequest,
+      isSelf: currentUserId === userId
+    });
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
 module.exports = {
   searchUsers,
   sendRequest,
@@ -140,5 +173,6 @@ module.exports = {
   removeFriend,
   getFriendsList,
   getPendingRequests,
-  getUserByUid
+  getUserByUid,
+  getUserById
 };

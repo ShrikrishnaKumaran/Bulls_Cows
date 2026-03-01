@@ -107,7 +107,13 @@ const userSchema = new mongoose.Schema({
       enum: ['win', 'loss']
     },
     score: String, // e.g., "3-1"
-    format: Number // Best of 1, 3, 5
+    format: Number, // Best of 1, 3, 5
+    digits: Number, // 3 or 4
+    difficulty: String, // 'easy' or 'hard'
+    playedAt: {
+      type: Date,
+      default: Date.now
+    }
   }],
 
   isOnline: {

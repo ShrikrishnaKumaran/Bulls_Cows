@@ -269,6 +269,19 @@ const getUserByUid = async (uid) => {
   return user;
 };
 
+/**
+ * Get a user's public profile by their MongoDB ObjectId
+ * Used for viewing opponent profiles from match history
+ * @param {string} userId - MongoDB ObjectId string
+ * @returns {Promise<Object>} User profile with uid, username, stats, online status, and join date
+ * @throws {Error} If user not found
+ */
+const getUserById = async (userId) => {
+  const user = await User.findById(userId).select('uid username stats isOnline createdAt friends');
+  if (!user) throw new Error('User not found');
+  return user;
+};
+
 // Export all friend service functions
 module.exports = {
   searchUsers,
@@ -279,5 +292,6 @@ module.exports = {
   removeFriend,
   getFriendsList,
   getPendingRequests,
-  getUserByUid
+  getUserByUid,
+  getUserById
 };

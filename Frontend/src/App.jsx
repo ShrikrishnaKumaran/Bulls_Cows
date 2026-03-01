@@ -14,6 +14,10 @@ import ProfilePage from './pages/profile/ProfilePage'
 import SetupPage from './pages/offline/SetupPage'
 import OfflineGamePage from './pages/offline/GamePage'
 
+// Pages - Bot
+import BotSetupPage from './pages/bot/BotSetupPage'
+import BotGamePage from './pages/bot/BotGamePage'
+
 // Pages - Online Lobby
 import CreateRoomPage from './pages/online/CreateRoomPage'
 import JoinRoomPage from './pages/online/JoinRoomPage'
@@ -82,6 +86,8 @@ function App() {
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/offline/setup" element={<SetupPage />} />
         <Route path="/offline/game" element={<OfflineGamePage />} />
+        <Route path="/bot/setup" element={<BotSetupPage />} />
+        <Route path="/bot/game" element={<BotGamePage />} />
         <Route path="/online/setup" element={<ProtectedRoute><OnlineSetupPage /></ProtectedRoute>} />
         <Route path="/lobby/create" element={<ProtectedRoute><CreateRoomPage /></ProtectedRoute>} />
         <Route path="/lobby/join" element={<ProtectedRoute><JoinRoomPage /></ProtectedRoute>} />

@@ -133,3 +133,23 @@ body {
 .animate-bounce-in {
   animation: bounceIn 0.5s ease-out forwards;
 }
+
+/* Hexagonal clip-path for avatar */
+.clip-hexagon {
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+/* Rotating hex border animation */
+@keyframes hexRotate {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(30deg); }
+}
+
+.hex-rotate {
+  animation: hexRotate 4s ease-in-out infinite alternate;
+}
+
+/* Digital counter nixie-tube style */
+.digital-counter {
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3), 0 0 20px rgba(250, 204, 21, 0.15);
+}

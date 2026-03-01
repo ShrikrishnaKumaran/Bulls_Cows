@@ -6,7 +6,7 @@ import { useState } from 'react';
 /**
  * AuthInput - Dark themed input with icon support and error handling
  */
-export function AuthInput({ label, type = 'text', placeholder, icon, value, onChange, error = false, ...props }) {
+export function AuthInput({ label, type = 'text', placeholder, icon, value, onChange, error = false, labelRight = null, ...props }) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
@@ -14,9 +14,12 @@ export function AuthInput({ label, type = 'text', placeholder, icon, value, onCh
 
   return (
     <div className="w-full">
-      <label className={`block text-xs font-semibold uppercase tracking-wider mb-2 ${hasError ? 'text-red-500' : 'text-slate-400'}`}>
-        {label}
-      </label>
+      <div className="flex items-center justify-between mb-2">
+        <label className={`text-xs font-semibold uppercase tracking-wider ${hasError ? 'text-red-500' : 'text-slate-400'}`}>
+          {label}
+        </label>
+        {labelRight}
+      </div>
       <div className="relative">
         {icon && (
           <span className={`absolute left-3 top-1/2 -translate-y-1/2 text-lg ${hasError ? 'text-red-500' : 'text-slate-400'}`}>

@@ -462,6 +462,17 @@ const useOnlineGameStore = create((set, get) => ({
         // Determine if we're host by comparing with auth user ID (string comparison)
         const amIHost = myUserId === hostId;
         
+        console.log('[GameStart] Identity mapping:', {
+          myUserId,
+          hostId,
+          opponentId,
+          amIHost,
+          hostUsername: data.host?.username,
+          opponentUsername: data.opponent?.username,
+          'me.name': amIHost ? data.host?.username : data.opponent?.username,
+          'opp.name': amIHost ? data.opponent?.username : data.host?.username,
+        });
+        
         set({
           status: 'SETUP',
           roomCode: data.roomCode,
@@ -650,6 +661,15 @@ const useOnlineGameStore = create((set, get) => ({
         const { players } = get();
         const oppId = String(players.opponent.oderId || '');
         
+        console.log('[GameOver] Received:', {
+          'data.winner': data.winner,
+          myId,
+          oppId,
+          'amIWinner': String(data.winner) === myId,
+          'data.finalScores': data.finalScores,
+          'data.reason': data.reason,
+        });
+        
         // More robust score calculation from finalScores object
         let calculatedMyScore = 0;
         let calculatedOppScore = 0;
@@ -665,10 +685,12 @@ const useOnlineGameStore = create((set, get) => ({
           }
         }
         
+        const amIWinner = String(data.winner) === myId;
+        
         set({
           status: 'GAME_OVER',
-          winner: String(data.winner) === myId ? 'me' : 'opponent',
-          winnerName: data.winnerName,
+          winner: amIWinner ? 'me' : 'opponent',
+          winnerName: amIWinner ? players.me.name : players.opponent.name,
           gameOverReason: data.reason || 'win',
           gameData: {
             ...get().gameData,

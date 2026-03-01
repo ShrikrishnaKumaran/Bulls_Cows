@@ -232,6 +232,16 @@ const useAuthStore = create(
           throw new Error(error.response?.data?.message || 'User not found');
         }
       },
+
+      // Get user profile by MongoDB ID (for opponent profile modal)
+      getUserById: async (userId) => {
+        try {
+          const response = await api.get(`/friends/profile/${encodeURIComponent(userId)}`);
+          return response.data;
+        } catch (error) {
+          throw new Error(error.response?.data?.message || 'User not found');
+        }
+      },
     }),
     {
       name: 'auth-storage',

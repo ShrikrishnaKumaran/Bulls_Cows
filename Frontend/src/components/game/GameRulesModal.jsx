@@ -145,19 +145,19 @@ function GameRulesModal({ onClose }) {
               <div className="flex gap-2">
                 <span className="text-slate-400">Secret:</span>
                 <span className="tracking-widest">
-                  <span className="text-yellow-400">1</span>{" "}
-                  <span className="text-blue-400">2</span>{" "}
-                  <span className="text-blue-400">3</span>{" "}
-                  <span className="text-white">4</span>
+                  <span className="text-white">7</span>{" "}
+                  <span className="text-blue-400">4</span>{" "}
+                  <span className="text-blue-400">1</span>{" "}
+                  <span className="text-white">9</span>
                 </span>
               </div>
               <div className="flex gap-2">
                 <span className="text-slate-400">Guess:</span>
                 <span className="tracking-widest">
-                  <span className="text-yellow-400">&nbsp;1</span>{" "}
-                  <span className="text-blue-400">3</span>{" "}
-                  <span className="text-blue-400">2</span>{" "}
-                  <span className="text-red-500">5</span>
+                  <span className="text-blue-400">&nbsp;1</span>{" "}
+                  <span className="text-yellow-400">4</span>{" "}
+                  <span className="text-blue-400">7</span>{" "}
+                  <span className="text-red-500">8</span>
                 </span>
               </div>
               <div className="border-t border-slate-700 my-1.5"></div>

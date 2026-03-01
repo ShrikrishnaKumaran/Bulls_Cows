@@ -1,9 +1,4 @@
-# Bulls, Cows & Shit - Technical Documentation
-
-**Version:** 3.1.0  
-**Last Updated:** February 17, 2026  
-**Status:** Production Ready
-
+# Bulls & Cows - Technical Documentation
 ---
 
 ## Table of Contents
@@ -37,7 +32,7 @@ Bulls & Cows  is a full-stack multiplayer number guessing game where players try
 3. For each guess, feedback is given:
    - 🟢 **Bulls**: Correct digit in correct position
    - 🟡 **Cows**: Correct digit in wrong position
-   - ⚫ **Shit**: Digit not in the secret number
+   - ⚫ **Miss**: Digit not in the secret number
 4. First player to guess the secret correctly wins the round
 5. Match can be Single, Best of 3, or Best of 5 rounds
 
