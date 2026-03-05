@@ -27,7 +27,7 @@ export const TechTile = ({ icon, label, selected, onClick, accentColor = 'primar
     <button
       onClick={onClick}
       className={`
-        bg-[#111827] border rounded-xl p-2.5 flex flex-col items-center justify-center gap-1
+        bg-[#111827] border rounded-xl p-2 flex flex-col items-center justify-center gap-0.5
         cursor-pointer transition-all duration-200 hover:border-slate-500 hover:brightness-110
         ${selected
           ? colors.selected

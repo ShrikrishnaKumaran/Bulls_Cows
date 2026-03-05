@@ -46,13 +46,13 @@ const CloseIcon = () => (
 // ═══════════════════════════════════════════════════════════
 
 const Step = ({ icon, iconColor, title, children }) => (
-  <div className="flex gap-3 mb-4">
-    <div className={`flex-shrink-0 w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center ${iconColor}`}>
+  <div className="flex gap-2.5 mb-3.5">
+    <div className={`flex-shrink-0 w-8 h-8 rounded-lg bg-slate-800/60 border border-slate-700/40 flex items-center justify-center ${iconColor}`}>
       {icon}
     </div>
-    <div className="flex-1">
-      <h3 className="font-semibold text-white text-sm mb-0.5">{title}</h3>
-      <div className="text-slate-300 text-xs leading-relaxed">
+    <div className="flex-1 min-w-0">
+      <h3 className="font-black text-white text-[13px] mb-0.5 uppercase tracking-wide">{title}</h3>
+      <div className="text-slate-400 text-[11px] leading-[1.6]">
         {children}
       </div>
     </div>
@@ -65,110 +65,119 @@ const Step = ({ icon, iconColor, title, children }) => (
 
 function GameRulesModal({ onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 sm:pt-0 sm:items-center bg-black/70 backdrop-blur-sm">
       {/* Modal Card */}
-      <div className="bg-[#1f2937] border border-slate-700 rounded-2xl w-full max-w-md m-4 shadow-2xl">
+      <div className="relative bg-[#0d1520] border border-slate-700/60 rounded-2xl w-full max-w-md mx-4 shadow-2xl overflow-hidden font-space">
         
+        {/* Top accent line */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-          <h2 className="text-lg font-bold text-white tracking-wide">
-            HOW TO PLAY
-          </h2>
+        <div className="relative flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
+          <div>
+            <h2 className="text-[15px] font-black text-white uppercase tracking-[0.15em]">
+              How to Play
+            </h2>
+          </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 border border-slate-600/50 text-slate-400 hover:text-white hover:bg-slate-600/60 hover:border-slate-500/60 transition-all"
           >
             <CloseIcon />
           </button>
         </div>
 
-        {/* Body - Full View (No Scroll) */}
-        <div className="p-5">
+        {/* Body */}
+        <div className="px-4 py-3.5 max-h-[72vh] overflow-y-auto" style={{scrollbarWidth:'none'}}>
           
-          {/* Step 1: Choose Your Secret */}
+          {/* Step 1 */}
           <Step
             icon={<LockIcon />}
             iconColor="text-yellow-400"
-            title="Choose Your Secret"
+            title="Set Your Secret"
           >
-            Pick 3 or 4 unique digits (e.g., 123 or 1234). Each digit can only appear once — no repeats like 1123.
+            Pick 3 or 4 unique digits.
+            No repeats allowed — <span className="text-slate-300">1234</span> is valid,{' '}
+            <span className="text-red-400/70 line-through">1123</span> is not.
           </Step>
 
-          {/* Step 2: Take Turns */}
+          {/* Step 2 */}
           <Step
             icon={<ArrowsIcon />}
-            iconColor="text-blue-400"
+            iconColor="text-cyan-400"
             title="Take Turns"
           >
-            Each player takes turns guessing the other player&apos;s secret.
+            Players alternate guessing each other&apos;s secret code.
+            Crack it before your opponent does.
           </Step>
 
-          {/* Step 3: Understand Feedback */}
+          {/* Step 3 */}
           <Step
             icon={<TargetIcon />}
-            iconColor="text-green-400"
-            title="Understand Feedback"
+            iconColor="text-emerald-400"
+            title="Read Feedback"
           >
-            <div className="space-y-1.5 mt-1">
+            After each guess, you get clues:
+            <div className="space-y-1 mt-1.5">
               <div className="flex items-center gap-2">
-                <span>🐂</span>
-                <span className="text-yellow-400 font-semibold text-xs">BULL</span>
-                <span className="text-slate-400 text-xs">— Right digit, Right spot</span>
+                <span className="text-sm">🐂</span>
+                <span className="text-yellow-400 font-bold text-[11px] font-mono">BULL</span>
+                <span className="text-slate-500 text-[11px]">— Correct digit & position</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-blue-400">🐮</span>
-                <span className="text-blue-400 font-semibold text-xs">COW</span>
-                <span className="text-slate-400 text-xs">— Right digit, Wrong spot</span>
+                <span className="text-sm">🐮</span>
+                <span className="text-cyan-400 font-bold text-[11px] font-mono">COW</span>
+                <span className="text-slate-500 text-[11px]">— Correct digit, wrong spot</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-500">❌</span>
-                <span className="text-slate-500 font-semibold text-xs">MISS</span>
-                <span className="text-slate-400 text-xs">— Digit not in secret</span>
+                <span className="text-sm">❌</span>
+                <span className="text-red-400 font-bold text-[11px] font-mono">MISS</span>
+                <span className="text-slate-500 text-[11px]">— Digit not in the secret</span>
               </div>
             </div>
           </Step>
 
-          {/* Step 4: Win the Game */}
+          {/* Step 4 */}
           <Step
             icon={<TrophyIcon />}
             iconColor="text-amber-400"
             title="Win the Game"
           >
-            First to get <span className="text-yellow-400 font-semibold">all Bulls</span> (3 or 4 depending on mode) wins!
+            Score <span className="text-yellow-400 font-bold">all Bulls</span> to win.
+            First player to fully crack the code takes the round.
           </Step>
 
-          {/* Terminal Style Example */}
-          <div className="bg-[#111827] rounded-lg p-3 mt-1 font-mono text-xs border border-slate-700">
-            {/* Example (4-digit mode) */}
-            <div className="text-slate-500 mb-1">{'// Example (4-digit mode)'}</div>
+          {/* Terminal Example */}
+          <div className="bg-black/50 border-l-2 border-primary/50 rounded-r-lg px-3 py-2.5 font-mono text-[11px]">
+            <div className="text-slate-600 mb-1">{'// Example — 4-digit mode'}</div>
             <div className="space-y-0.5">
               <div className="flex gap-2">
-                <span className="text-slate-400">Secret:</span>
+                <span className="text-slate-500 w-12">Secret:</span>
                 <span className="tracking-widest">
                   <span className="text-white">7</span>{" "}
-                  <span className="text-blue-400">4</span>{" "}
-                  <span className="text-blue-400">1</span>{" "}
+                  <span className="text-cyan-400">4</span>{" "}
+                  <span className="text-cyan-400">1</span>{" "}
                   <span className="text-white">9</span>
                 </span>
               </div>
               <div className="flex gap-2">
-                <span className="text-slate-400">Guess:</span>
+                <span className="text-slate-500 w-12">Guess:</span>
                 <span className="tracking-widest">
-                  <span className="text-blue-400">&nbsp;1</span>{" "}
+                  <span className="text-cyan-400">&nbsp;1</span>{" "}
                   <span className="text-yellow-400">4</span>{" "}
-                  <span className="text-blue-400">7</span>{" "}
-                  <span className="text-red-500">8</span>
+                  <span className="text-cyan-400">7</span>{" "}
+                  <span className="text-red-400">8</span>
                 </span>
               </div>
-              <div className="border-t border-slate-700 my-1.5"></div>
+              <div className="border-t border-slate-700/50 my-1"></div>
               <div className="flex gap-2">
-                <span className="text-slate-400">Result:</span>
+                <span className="text-slate-500 w-12">Result:</span>
                 <span>
                   <span className="text-yellow-400">1 Bull</span>
-                  <span className="text-slate-500">, </span>
-                  <span className="text-blue-400">2 Cows</span>
-                  <span className="text-slate-500">, </span>
-                  <span className="text-red-500">1 Miss</span>
+                  <span className="text-slate-600"> · </span>
+                  <span className="text-cyan-400">2 Cows</span>
+                  <span className="text-slate-600"> · </span>
+                  <span className="text-red-400">1 Miss</span>
                 </span>
               </div>
             </div>
@@ -177,15 +186,17 @@ function GameRulesModal({ onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-slate-700">
+        <div className="px-4 py-2.5 border-t border-slate-700/50">
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-black font-semibold transition-colors"
+            className="w-full py-2.5 rounded-xl bg-primary hover:bg-yellow-400 text-black font-black text-sm uppercase tracking-wider font-mono transition-all active:scale-[0.98]"
           >
             Got it!
           </button>
         </div>
 
+        {/* Bottom accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-600/40 to-transparent" />
       </div>
     </div>
   );

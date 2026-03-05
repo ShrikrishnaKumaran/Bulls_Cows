@@ -102,17 +102,24 @@ function InviteFriendModal({ onClose, roomCode }) {
   const offlineFriends = friends.filter(f => !f.isOnline);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-[#1f2937] border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl max-h-[80vh] flex flex-col">
-        
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="relative bg-[#0d1520] border border-slate-700/60 rounded-2xl w-full max-w-md shadow-2xl max-h-[80vh] flex flex-col overflow-hidden font-space">
+
+        {/* Top accent line */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+
+        {/* Ambient glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-24 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none" />
+
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700 flex-shrink-0">
-          <h2 className="text-lg font-bold text-white tracking-wide">
-            INVITE FRIEND
-          </h2>
+        <div className="relative flex items-center justify-between px-5 py-4 border-b border-slate-700/50 flex-shrink-0">
+          <div>
+            <p className="text-[9px] font-mono text-cyan-500/50 uppercase tracking-[0.35em] mb-0.5">{'// Multiplayer'}</p>
+            <h2 className="text-base font-black text-white uppercase tracking-[0.15em]">Invite Operative</h2>
+          </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700/50 border border-slate-600/50 text-slate-400 hover:text-white hover:bg-slate-600/60 hover:border-slate-500/60 transition-all"
           >
             <CloseIcon />
           </button>
@@ -120,70 +127,72 @@ function InviteFriendModal({ onClose, roomCode }) {
 
         {/* Content */}
         <div className="p-4 overflow-y-auto flex-1">
+
           {/* Error Message */}
           {error && (
-            <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl text-sm mb-4">
-              {error}
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-2 rounded-lg text-xs font-mono mb-3">
+              {'> ERROR: '}{error}
             </div>
           )}
 
           {/* Loading State */}
           {loading && (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="flex flex-col items-center justify-center py-10 gap-3">
+              <div className="animate-spin rounded-full h-7 w-7 border-2 border-slate-700 border-t-cyan-400" />
+              <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Scanning network...</p>
             </div>
           )}
 
           {/* No Friends */}
           {!loading && friends.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-slate-400">No friends yet</p>
-              <p className="text-slate-500 text-sm mt-2">
-                Add friends from your profile page
-              </p>
+              <p className="text-[10px] font-mono text-cyan-500/40 uppercase tracking-[0.3em] mb-2">{'> No operatives found'}</p>
+              <p className="text-slate-500 text-xs font-mono">Add friends from your profile page</p>
             </div>
           )}
 
           {/* Friends List */}
           {!loading && friends.length > 0 && (
             <div className="space-y-4">
+
               {/* Online Friends */}
               {onlineFriends.length > 0 && (
                 <div>
-                  <h3 className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-2 px-1">
+                  <p className="text-[9px] font-mono text-emerald-400/70 uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
                     Online ({onlineFriends.length})
-                  </h3>
-                  <div className="space-y-2">
+                  </p>
+                  <div className="space-y-1.5">
                     {onlineFriends.map((friend) => (
                       <div
                         key={friend._id}
-                        className="flex items-center gap-3 bg-slate-800/50 rounded-xl p-3"
+                        className="flex items-center gap-3 bg-slate-800/40 border border-slate-700/40 rounded-xl px-3 py-2.5 hover:border-cyan-500/20 hover:bg-slate-800/60 transition-all"
                       >
-                        <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-400">
-                          <UserIcon />
+                        <div className="relative shrink-0">
+                          <div className="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-slate-400">
+                            <UserIcon />
+                          </div>
+                          <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-[#0d1520] shadow-[0_0_5px_#34d399]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-white font-medium truncate">{friend.username}</p>
-                          <p className="text-green-400 text-xs flex items-center gap-1">
-                            <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                            Online
-                          </p>
+                          <p className="text-white font-black text-sm truncate">{friend.username}</p>
+                          <p className="text-[10px] font-mono text-emerald-400/70 uppercase tracking-wider">Online</p>
                         </div>
                         <button
                           onClick={() => handleInvite(friend)}
                           disabled={invitingId === friend._id || invitedIds.has(friend._id)}
-                          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all
-                            ${invitedIds.has(friend._id)
-                              ? 'bg-green-500/20 text-green-400 cursor-default'
+                          className={`px-3 py-1.5 rounded-lg text-xs font-black font-mono uppercase tracking-wider transition-all ${
+                            invitedIds.has(friend._id)
+                              ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 cursor-default'
                               : invitingId === friend._id
-                                ? 'bg-slate-700 text-slate-400 cursor-wait'
-                                : 'bg-primary text-black hover:bg-yellow-400'
-                            }`}
+                                ? 'bg-slate-700/50 border border-slate-600/40 text-slate-400 cursor-wait'
+                                : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 hover:shadow-[0_0_10px_rgba(6,182,212,0.2)]'
+                          }`}
                         >
-                          {invitedIds.has(friend._id) 
-                            ? '✓ Invited' 
-                            : invitingId === friend._id 
-                              ? 'Sending...' 
+                          {invitedIds.has(friend._id)
+                            ? '✓ Sent'
+                            : invitingId === friend._id
+                              ? '...'
                               : 'Invite'}
                         </button>
                       </div>
@@ -195,41 +204,43 @@ function InviteFriendModal({ onClose, roomCode }) {
               {/* Offline Friends */}
               {offlineFriends.length > 0 && (
                 <div>
-                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-1">
+                  <p className="text-[9px] font-mono text-slate-600 uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
                     Offline ({offlineFriends.length})
-                  </h3>
-                  <div className="space-y-2">
+                  </p>
+                  <div className="space-y-1.5">
                     {offlineFriends.map((friend) => (
                       <div
                         key={friend._id}
-                        className="flex items-center gap-3 bg-slate-800/30 rounded-xl p-3 opacity-60"
+                        className="flex items-center gap-3 bg-slate-800/20 border border-slate-700/25 rounded-xl px-3 py-2.5 opacity-50"
                       >
-                        <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-500">
+                        <div className="w-9 h-9 rounded-lg bg-slate-700/30 border border-slate-700/30 flex items-center justify-center text-slate-600">
                           <UserIcon />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-slate-400 font-medium truncate">{friend.username}</p>
-                          <p className="text-slate-500 text-xs flex items-center gap-1">
-                            <span className="w-2 h-2 bg-slate-500 rounded-full"></span>
-                            Offline
-                          </p>
+                          <p className="text-slate-500 font-black text-sm truncate">{friend.username}</p>
+                          <p className="text-[10px] font-mono text-slate-600 uppercase tracking-wider">Offline</p>
                         </div>
-                        <span className="text-slate-500 text-xs">Unavailable</span>
+                        <span className="text-[10px] font-mono text-slate-600 uppercase tracking-wider">N/A</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
+
             </div>
           )}
         </div>
 
-        {/* Footer Hint */}
-        <div className="px-6 py-3 border-t border-slate-700 flex-shrink-0">
-          <p className="text-slate-500 text-xs text-center">
-            Invites are sent instantly to online friends
+        {/* Footer */}
+        <div className="px-5 py-3 border-t border-slate-700/40 flex-shrink-0">
+          <p className="text-[9px] font-mono text-slate-600 uppercase tracking-[0.25em] text-center">
+            {'> Invites dispatched instantly to online operatives'}
           </p>
         </div>
+
+        {/* Bottom accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-600/40 to-transparent" />
       </div>
     </div>
   );

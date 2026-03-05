@@ -43,7 +43,7 @@ const BotStepper = ({ currentStep }) => {
   ];
 
   return (
-    <div className="flex items-center justify-center mb-4 px-2">
+    <div className="flex items-center justify-center mb-2 px-2">
       {steps.map((step, i) => (
         <div key={step.num} className="flex items-center">
           <div className="flex flex-col items-center">
@@ -156,10 +156,10 @@ function BotSetupPage() {
 
           <BotStepper currentStep={1} />
 
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 flex flex-col justify-evenly min-h-0 py-1">
             {/* Bot Difficulty */}
-            <div className="mb-3">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+            <div>
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
                 Bot Model
               </h3>
               <div className="grid grid-cols-2 gap-2">
@@ -179,18 +179,12 @@ function BotSetupPage() {
                 />
               </div>
               {/* Bot info */}
-              <div className="mt-2 px-2 py-1.5 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                <p className="text-[10px] text-slate-400 leading-relaxed">
-                  {config.botDifficulty === 'Easy'
-                    ? '🤖 Casual AI. Makes valid guesses but sometimes "forgets" clues. Beatable!'
-                    : '🔴 Optimal AI. Plays mathematically perfect. Avg 5-6 turns to win.'}
-                </p>
-              </div>
+
             </div>
 
             {/* Number of Digits */}
-            <div className="mb-3">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+            <div>
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
                 Target Complexity
               </h3>
               <div className="grid grid-cols-2 gap-2">
@@ -210,8 +204,8 @@ function BotSetupPage() {
             </div>
 
             {/* Difficulty (timer rules) */}
-            <div className="mb-3">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+            <div>
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
                 Threat Level
               </h3>
               <div className="grid grid-cols-2 gap-2">
@@ -233,8 +227,8 @@ function BotSetupPage() {
             </div>
 
             {/* Match Format */}
-            <div className="mb-3">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+            <div>
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">
                 Game Format
               </h3>
               <div className="grid grid-cols-3 gap-2">
@@ -260,7 +254,7 @@ function BotSetupPage() {
             </div>
 
             {/* System Terminal */}
-            <div className="bg-black/50 border-l-4 border-purple-500 p-2.5 rounded-r-lg font-mono text-[10px] mb-3">
+            <div className="bg-black/50 border-l-4 border-purple-500 p-2.5 rounded-r-lg font-mono text-[10px]">
               <div className="text-purple-500/60 mb-1">{`> BOT_INIT_SEQUENCE...`}</div>
               <div className="text-purple-400/80 space-y-0.5">
                 <p>
@@ -292,17 +286,18 @@ function BotSetupPage() {
               </div>
               <div className="text-purple-500/40 mt-1">{`> AWAITING_TARGET_CODE...`}</div>
             </div>
+          </main>
 
-            {/* Launch Button */}
+          {/* Footer — pinned */}
+          <footer className="shrink-0 py-3">
             <button
               onClick={() => setStep(2)}
               className="w-full py-3 rounded-xl bg-purple-500 text-white font-bold text-sm uppercase tracking-widest 
                 shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] hover:translate-y-[-2px] 
-                transition-all duration-200 active:scale-[0.98] mb-4"
-            >
+                transition-all duration-200 active:scale-[0.98]">
               ⚡ Set Your Code
             </button>
-          </main>
+          </footer>
         </div>
       </div>
     );

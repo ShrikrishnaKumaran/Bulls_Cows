@@ -55,44 +55,48 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#111827] flex flex-col font-space relative overflow-hidden">
+    <div className="h-screen bg-[#0d1520] flex flex-col font-space overflow-hidden">
       {/* Scanlines Overlay */}
       <div className="scanlines" />
 
+      {/* Ambient glows */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-72 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
       {/* Content container */}
-      <div className="relative z-10 flex-1 flex flex-col max-w-md mx-auto w-full shadow-2xl bg-[#111827]">
+      <div className="relative z-10 flex-1 flex flex-col max-w-md mx-auto w-full px-4">
         
         {/* ─── HEADER (Presentation Component) ─── */}
         <HomeHeader onLogout={handleLogout} />
 
         {/* ─── MAIN CONTENT ─── */}
-        <main className="flex-1 flex flex-col items-center justify-center px-5 sm:px-6 pt-0 pb-5">
-          <div className="w-full max-w-md">
-            
-            {/* Logo / Title */}
-            <div className="text-center mb-12">
+        <main className="flex-1 flex flex-col min-h-0">
+
+          {/* Logo Section */}
+          <section className="flex items-end justify-center pt-8 pb-6">
+            <div className="text-center">
               <h1 className="text-4xl md:text-5xl font-bold glitch-text mb-3 tracking-tight">
                 <span className="text-white">BULLS</span>
                 <span className="text-primary mx-2">&</span>
                 <span className="text-white">COWS</span>
               </h1>
-              <div className="flex items-center justify-center gap-3 mb-2">
-                <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-primary to-transparent" />
+              <div className="flex items-center justify-center gap-2">
+                <div className="h-px w-12 bg-gradient-to-r from-transparent to-cyan-500/40" />
+                <span className="text-[9px] font-mono text-slate-600 uppercase tracking-[0.3em]">Select Mode</span>
+                <div className="h-px w-12 bg-gradient-to-l from-transparent to-cyan-500/40" />
               </div>
-              <p className="text-slate-400 text-sm uppercase tracking-widest">
-                Number Guessing Game
-              </p>
             </div>
+          </section>
 
-            {/* ─── GAME MODE BUTTONS (Presentation Components) ─── */}
-            <div className="space-y-5">
+          {/* Game Mode Buttons Section */}
+          <section className="flex-1 flex flex-col justify-center px-1">
+            <div className="space-y-8">
               <GameModeCard
                 icon={<OfflineIcon />}
                 title="Pass & Play"
                 subtitle="Local multiplayer on one device"
                 onClick={() => navigate('/offline/setup')}
-                iconBgClass="bg-yellow-500/10"
-                iconTextClass="text-yellow-400"
+                accentColor="yellow"
               />
               
               <GameModeCard
@@ -100,40 +104,39 @@ function HomePage() {
                 title="Online Duel"
                 subtitle="Play with friends via room code"
                 onClick={() => setShowVsFriendModal(true)}
-                iconBgClass="bg-blue-500/10"
-                iconTextClass="text-blue-400"
+                accentColor="cyan"
               />
               
               <GameModeCard
                 icon={<BotIcon />}
                 title="Bot Arena"
-                subtitle="Challenge the Bot"
+                subtitle="Challenge the AI opponent"
                 onClick={() => navigate('/bot/setup')}
-                iconBgClass="bg-purple-500/10"
-                iconTextClass="text-purple-400"
+                accentColor="purple"
               />
             </div>
-          </div>
+          </section>
+
         </main>
 
-        {/* ─── HELP LINK ─── */}
-        <div className="text-center">
+        {/* ─── HOW TO PLAY ─── */}
+        <div className="text-center shrink-0">
           <button 
             onClick={() => setShowTutorial(true)}
-            className="text-base font-bold font-mono text-primary hover:text-yellow-300 tracking-widest uppercase mb-6 transition-all duration-300 drop-shadow-[0_0_8px_rgba(250,204,20,0.8)] hover:drop-shadow-[0_0_12px_rgba(250,204,20,1)] animate-pulse"
+            className="text-base font-bold font-mono text-primary hover:text-yellow-300 tracking-widest uppercase mb-3 transition-all duration-300 drop-shadow-[0_0_8px_rgba(250,204,20,0.8)] hover:drop-shadow-[0_0_12px_rgba(250,204,20,1)] animate-pulse"
           >
             [ HOW TO PLAY ]
           </button>
         </div>
+      </div>
 
-        {/* ─── TECH BORDER FOOTER ─── */}
-        <div className="mt-auto pt-8 pb-4 px-4 flex justify-between items-end opacity-20">
-          <div className="h-16 w-16 border-l-2 border-b-2 border-white rounded-bl-xl"></div>
-          <div className="font-mono text-[10px] text-center text-white">
-            SYSTEM READY<br/>THINK • DEDUCE • CONQUER
-          </div>
-          <div className="h-16 w-16 border-r-2 border-b-2 border-white rounded-br-xl"></div>
+      {/* ─── TECH BORDER FOOTER (full width, outside padded container) ─── */}
+      <div className="relative z-10 shrink-0 pt-2 pb-4 px-4 flex justify-between items-end opacity-20 max-w-lg mx-auto w-full">
+        <div className="h-14 w-14 border-l-2 border-b-2 border-white rounded-bl-xl"></div>
+        <div className="font-mono text-[10px] text-center text-white">
+          SYSTEM READY<br/>THINK • DEDUCE • CONQUER
         </div>
+        <div className="h-14 w-14 border-r-2 border-b-2 border-white rounded-br-xl"></div>
       </div>
 
       {/* ─── MODALS ─── */}

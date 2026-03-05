@@ -149,6 +149,16 @@ body {
   animation: hexRotate 4s ease-in-out infinite alternate;
 }
 
+/* Smooth caret blink for OTP-style inputs */
+@keyframes caretBlink {
+  0%, 45% { opacity: 1; }
+  55%, 100% { opacity: 0; }
+}
+
+.caret-blink {
+  animation: caretBlink 1s ease-in-out infinite;
+}
+
 /* Digital counter nixie-tube style */
 .digital-counter {
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.3), 0 0 20px rgba(250, 204, 21, 0.15);
