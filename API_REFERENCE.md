@@ -6,7 +6,7 @@ Complete REST API documentation for Bulls, Cows & Shit backend.
 
 ```
 Development: http://localhost:5000/api
-Production: https://bulls-cows-backend.onrender.com/api
+Production: https://bullscows-production.up.railway.app/api
 ```
 
 ## Authentication

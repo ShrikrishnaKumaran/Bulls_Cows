@@ -8,7 +8,7 @@ Complete WebSocket (Socket.io) event documentation for Bulls, Cows & Shit.
 
 ```
 Development: http://localhost:5000
-Production:  https://bulls-cows-backend.onrender.com
+Production:  https://bullscows-production.up.railway.app
 ```
 
 ### Connecting to the Server

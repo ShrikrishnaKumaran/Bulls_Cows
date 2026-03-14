@@ -806,13 +806,13 @@ PORT=5000
 MONGO_URI=mongodb+srv://<user>:<pass>@cluster.mongodb.net/bulls_cows
 JWT_SECRET=<strong-random-secret>
 JWT_REFRESH_SECRET=<strong-random-secret>
-CLIENT_URL=https://bulls-cows-frontend.onrender.com
+CLIENT_URL=https://bullscows-production.up.railway.app
 ```
 
 #### Frontend (Render Static Site)
 ```bash
-VITE_API_URL=https://bulls-cows-backend.onrender.com
-VITE_SOCKET_URL=https://bulls-cows-backend.onrender.com
+VITE_API_URL=https://bullscows-production.up.railway.app
+VITE_SOCKET_URL=https://bullscows-production.up.railway.app
 ```
 
 ---
@@ -862,7 +862,7 @@ VITE_SOCKET_URL=https://bulls-cows-backend.onrender.com
 
 ### Production URLs
 - Frontend: `https://bulls-cows-pied.vercel.app`
-- Backend: `https://bulls-cows-backend.onrender.com`
+- Backend: `https://bullscows-production.up.railway.app`
 
 ### PWA Configuration
 
