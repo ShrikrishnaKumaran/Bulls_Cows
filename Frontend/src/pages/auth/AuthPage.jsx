@@ -44,7 +44,11 @@ export default function AuthPage() {
   // Handle Google login button click
   const handleGoogleLogin = () => {
     if (googleLoginRef.current) {
-      googleLoginRef.current.click();
+      // Find the button inside the GoogleLogin component and click it
+      const button = googleLoginRef.current.querySelector('button');
+      if (button) {
+        button.click();
+      }
     }
   };
 
@@ -324,9 +328,8 @@ export default function AuthPage() {
         <TechFooter />
 
         {/* Hidden Google Login Component */}
-        <div style={{ display: 'none' }}>
+        <div ref={googleLoginRef} style={{ display: 'none' }}>
           <GoogleLogin
-            ref={googleLoginRef}
             onSuccess={handleGoogleSuccess}
             onError={() => addToast('Google login failed. Please try again.', 'error')}
             ux_mode="popup"
