@@ -799,20 +799,22 @@ VITE_SOCKET_URL=http://localhost:5000
 
 ### Production Environment Variables
 
-#### Backend (Render Web Service)
+#### Backend (Railway)
 ```bash
 NODE_ENV=production
 PORT=5000
 MONGO_URI=mongodb+srv://<user>:<pass>@cluster.mongodb.net/bulls_cows
 JWT_SECRET=<strong-random-secret>
 JWT_REFRESH_SECRET=<strong-random-secret>
-CLIENT_URL=https://bullscows-production.up.railway.app
+CLIENT_URL=https://bulls-cows-pied.vercel.app/
+GOOGLE_CLIENT_ID=<your-google-oauth-client-id>
 ```
 
-#### Frontend (Render Static Site)
+#### Frontend (Vercel)
 ```bash
 VITE_API_URL=https://bullscows-production.up.railway.app
 VITE_SOCKET_URL=https://bullscows-production.up.railway.app
+VITE_GOOGLE_CLIENT_ID=<your-google-oauth-client-id>
 ```
 
 ---
