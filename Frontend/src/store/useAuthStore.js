@@ -5,12 +5,13 @@ import { initializeSocket, destroySocket, connectSocket } from '../services/sock
 
 const useAuthStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
       loading: false,
       error: null,
+      lastRefresh: null,
 
       // Register user
       register: async (userData) => {
@@ -30,7 +31,11 @@ const useAuthStore = create(
             token: accessToken,
             isAuthenticated: true,
             loading: false,
+            lastRefresh: Date.now()
           });
+
+          // Start periodic token refresh
+          get().startPeriodicRefresh();
 
           return response.data;
         } catch (error) {
@@ -63,7 +68,11 @@ const useAuthStore = create(
             token: accessToken,
             isAuthenticated: true,
             loading: false,
+            lastRefresh: Date.now()
           });
+
+          // Start periodic token refresh
+          get().startPeriodicRefresh();
 
           return response.data;
         } catch (error) {
@@ -73,8 +82,46 @@ const useAuthStore = create(
         }
       },
 
+      // Google login
+      googleLogin: async (idToken) => {
+        set({ loading: true, error: null });
+        try {
+          const response = await api.post('/auth/google', { idToken });
+          const { accessToken, ...user } = response.data;
+
+          if (!accessToken || typeof accessToken !== 'string' || !accessToken.startsWith('eyJ')) {
+            throw new Error('Invalid token received from server');
+          }
+
+          localStorage.setItem('token', accessToken);
+
+          initializeSocket(accessToken);
+          connectSocket();
+
+          set({
+            user,
+            token: accessToken,
+            isAuthenticated: true,
+            loading: false,
+            lastRefresh: Date.now()
+          });
+
+          // Start periodic token refresh
+          get().startPeriodicRefresh();
+
+          return response.data;
+        } catch (error) {
+          const errorMessage = error.response?.data?.message || 'Google login failed';
+          set({ error: errorMessage, loading: false });
+          throw new Error(errorMessage);
+        }
+      },
+
       // Logout user
       logout: () => {
+        // Stop periodic refresh
+        get().stopPeriodicRefresh();
+        
         localStorage.removeItem('token');
         destroySocket();
         set({
@@ -82,6 +129,7 @@ const useAuthStore = create(
           token: null,
           isAuthenticated: false,
           error: null,
+          lastRefresh: null
         });
       },
 
@@ -107,7 +155,10 @@ const useAuthStore = create(
           
           if (accessToken) {
             localStorage.setItem('token', accessToken);
-            set({ token: accessToken });
+            set({ 
+              token: accessToken,
+              lastRefresh: Date.now()
+            });
             
             // Reinitialize socket with new token
             try {
@@ -128,25 +179,88 @@ const useAuthStore = create(
         }
       },
 
+      // Periodic token refresh to keep sessions alive on mobile
+      startPeriodicRefresh: () => {
+        // Refresh token every 10 minutes (access token expires in 15 minutes)
+        const refreshInterval = setInterval(async () => {
+          const state = get();
+          if (state.isAuthenticated) {
+            try {
+              await get().refreshToken();
+            } catch (error) {
+              // If refresh fails, user will need to login again
+              console.error('Periodic refresh failed:', error);
+            }
+          }
+        }, 10 * 60 * 1000); // 10 minutes
+
+        // Store the interval ID for cleanup
+        set({ refreshInterval });
+      },
+
+      // Stop periodic refresh
+      stopPeriodicRefresh: () => {
+        const state = get();
+        if (state.refreshInterval) {
+          clearInterval(state.refreshInterval);
+          set({ refreshInterval: null });
+        }
+      },
+
       // Clear error
       clearError: () => set({ error: null }),
 
-      // Initialize auth state from localStorage
-      initialize: () => {
+      // Initialize auth state from localStorage and validate tokens
+      initialize: async () => {
         const token = localStorage.getItem('token');
-        if (token) {
-          set({
-            token,
-            isAuthenticated: true,
-          });
-          // Initialize socket if token exists
+        
+        if (token && token.startsWith('eyJ')) {
           try {
-            initializeSocket(token);
-            connectSocket();
+            // Try to validate the token by making a test request
+            const response = await api.get('/auth/profile');
+            
+            if (response.data) {
+              set({
+                user: response.data,
+                token,
+                isAuthenticated: true,
+                lastRefresh: Date.now()
+              });
+              
+              // Initialize socket if token is valid
+              try {
+                initializeSocket(token);
+                connectSocket();
+              } catch (error) {
+                console.error('Failed to initialize socket:', error);
+              }
+
+              // Start periodic refresh for mobile persistence
+              get().startPeriodicRefresh();
+              
+              return;
+            }
           } catch (error) {
-            console.error('Failed to initialize socket:', error);
+            // Token is invalid, try to refresh it
+            try {
+              await get().refreshToken();
+              // Start periodic refresh after successful refresh
+              get().startPeriodicRefresh();
+              return;
+            } catch (refreshError) {
+              // Refresh failed, clear everything
+              localStorage.removeItem('token');
+            }
           }
         }
+        
+        // No valid token found
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          lastRefresh: null
+        });
       },
 
       // ═══════════════════════════════════════════════════════════

@@ -2,7 +2,10 @@
 const RefreshToken = require('../models/RefreshToken');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { OAuth2Client } = require('google-auth-library');
 const { generateAccessToken, generateRefreshToken } = require('../utils/tokenGenerator');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 //Authentication Service part 
 // Create and store refresh token
@@ -156,9 +159,76 @@ const logout = async (refreshToken) => {
   }
 };
 
+// Google login - verify Google ID token, find or create user, issue JWT tokens
+const googleLogin = async (idToken) => {
+  // Verify the Google ID token
+  const ticket = await googleClient.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  const payload = ticket.getPayload();
+  const { sub: googleId, email, name } = payload;
+
+  if (!email) {
+    throw new Error('Google account has no email');
+  }
+
+  // Check if user already exists with this googleId
+  let user = await User.findOne({ googleId });
+
+  if (!user) {
+    // Check if a local user exists with the same email — link accounts
+    user = await User.findOne({ email });
+
+    if (user) {
+      // Link Google to existing local account
+      user.googleId = googleId;
+      if (user.provider === 'local') {
+        user.provider = 'local'; // keep as local since they also have a password
+      }
+      await user.save();
+    } else {
+      // Create a new Google user
+      // Generate a username from the Google name or email prefix
+      let baseUsername = (name || email.split('@')[0])
+        .replace(/[^a-zA-Z0-9_]/g, '_')
+        .substring(0, 20);
+
+      // Ensure username is unique
+      let username = baseUsername;
+      let counter = 1;
+      while (await User.findOne({ username })) {
+        username = `${baseUsername.substring(0, 16)}_${counter}`;
+        counter++;
+      }
+
+      user = await User.create({
+        username,
+        email,
+        provider: 'google',
+        googleId,
+      });
+    }
+  }
+
+  const accessToken = generateAccessToken(user._id);
+  const refreshToken = await createRefreshToken(user._id);
+
+  return {
+    _id: user._id,
+    uid: user.uid,
+    username: user.username,
+    email: user.email,
+    accessToken,
+    refreshToken,
+  };
+};
+
 module.exports = {
   register,
   login,
+  googleLogin,
   getUserProfile,
   refreshAccessToken,
   logout,

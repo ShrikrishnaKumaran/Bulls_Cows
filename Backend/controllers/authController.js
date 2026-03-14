@@ -112,9 +112,42 @@ const logout = async (req, res) => {
   }
 };
 
+// @desc    Google login/register
+// @route   POST /api/auth/google
+// @access  Public
+const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ message: 'Google ID token is required' });
+    }
+
+    const userData = await authService.googleLogin(idToken);
+    
+    // Set refresh token in httpOnly cookie
+    res.cookie('refreshToken', userData.refreshToken, getCookieOptions());
+    
+    // Send access token in response body
+    res.status(200).json({
+      _id: userData._id,
+      uid: userData.uid,
+      username: userData.username,
+      email: userData.email,
+      accessToken: userData.accessToken,
+    });
+  } catch (error) {
+    const message = error.message === 'Google account has no email'
+      ? 'Your Google account must have an email address'
+      : 'Google login failed. Please try again.';
+    res.status(401).json({ message });
+  }
+};
+
 module.exports = {
   register,
   login,
+  googleLogin,
   getProfile,
   refresh,
   logout,

@@ -1,5 +1,6 @@
 ﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 
 // Pages - Auth
 import AuthPage from './pages/auth/AuthPage'
@@ -56,8 +57,17 @@ function App() {
 
   useEffect(() => {
     // Initialize auth state on app start
-    initialize()
-    setIsInitialized(true)
+    const initAuth = async () => {
+      try {
+        await initialize()
+      } catch (error) {
+        console.error('Auth initialization failed:', error)
+      } finally {
+        setIsInitialized(true)
+      }
+    }
+    
+    initAuth()
   }, [initialize])
 
   // Show nothing while initializing to prevent flash
@@ -70,6 +80,9 @@ function App() {
   }
 
   return (
+    <GoogleOAuthProvider 
+      clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}
+    >
     <BrowserRouter>
       {/* Global Toast Notifications */}
       <ToastContainer />
@@ -96,6 +109,7 @@ function App() {
         <Route path="/game/online/:roomCode" element={<ProtectedRoute><OnlineGamePage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
+    </GoogleOAuthProvider>
   )
 }
 

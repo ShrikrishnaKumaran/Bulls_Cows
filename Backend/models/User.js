@@ -36,9 +36,21 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Please provide a password'],
+    required: [function() { return this.provider !== 'google'; }, 'Please provide a password'],
     minlength: [6, 'Password must be at least 6 characters long'],
     select: false // Don't include password in queries by default include it only when explicitly asked via select('+password')
+  },
+
+  provider: {
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local'
+  },
+
+  googleId: {
+    type: String,
+    sparse: true,
+    unique: true
   },
 
   stats: {
