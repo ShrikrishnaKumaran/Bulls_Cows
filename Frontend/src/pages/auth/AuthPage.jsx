@@ -7,7 +7,7 @@
  * - Form validation
  * - Error handling
  */
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import api from '../../services/api';
