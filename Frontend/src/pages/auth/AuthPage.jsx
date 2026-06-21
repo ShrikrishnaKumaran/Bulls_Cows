@@ -307,9 +307,8 @@ export default function AuthPage() {
                   onClick={renderProps.onClick}
                   disabled={renderProps.disabled}
                   className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl
-                    bg-white/5 border border-slate-600 text-slate-200 font-semibold text-sm
-                    hover:bg-white/10 hover:border-slate-500 transition-all duration-200
-                    active:scale-[0.98]"
+                    bg-white/90 border border-slate-200/40 text-slate-900 font-semibold text-sm
+                    hover:bg-white transition-all duration-200 active:scale-[0.98] shadow-sm"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>

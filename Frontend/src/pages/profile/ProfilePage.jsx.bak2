@@ -1,0 +1,1058 @@
+/**
+ * ProfilePage - User Profile Dashboard
+ * 
+ * Modern design matching HomePage & AuthPage (dark cyber theme)
+ * 
+ * Features:
+ * - User Info with UID display
+ * - Chess.com style stats bar
+ * - Tab system: Match History | Allies (Friends)
+ * - Clickable opponent names → Opponent Profile Modal
+ * - Friend search modal
+ * - Friend request management
+ * - Auto-refresh match history on page focus / visibility change
+ */
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useAuthStore from '../../store/useAuthStore';
+import useToastStore from '../../store/useToastStore';
+
+// ═══════════════════════════════════════════════════════════
+// ICONS
+// ═══════════════════════════════════════════════════════════
+
+const BackIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path fillRule="evenodd" d="M7.72 12.53a.75.75 0 010-1.06l7.5-7.5a.75.75 0 111.06 1.06L9.31 12l6.97 6.97a.75.75 0 11-1.06 1.06l-7.5-7.5z" clipRule="evenodd" />
+  </svg>
+);
+
+const SearchIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path fillRule="evenodd" d="M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zM2.25 10.5a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 10.5z" clipRule="evenodd" />
+  </svg>
+);
+
+const AddUserIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path d="M6.25 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM3.25 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM19.75 7.5a.75.75 0 00-1.5 0v2.25H16a.75.75 0 000 1.5h2.25v2.25a.75.75 0 001.5 0v-2.25H22a.75.75 0 000-1.5h-2.25V7.5z" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+    <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.739a.75.75 0 011.04-.208z" clipRule="evenodd" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+    <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
+  </svg>
+);
+
+const OnlineIcon = () => (
+  <span className="w-2.5 h-2.5 bg-green-500 rounded-full inline-block shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
+);
+
+const OfflineIcon = () => (
+  <span className="w-2.5 h-2.5 bg-slate-500 rounded-full inline-block" />
+);
+
+const CloseIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path fillRule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clipRule="evenodd" />
+  </svg>
+);
+
+// Default SVG Avatar
+const DefaultAvatar = ({ className = "w-full h-full" }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+  </svg>
+);
+
+// ═══════════════════════════════════════════════════════════
+// FORMAT BADGE HELPER
+// ═══════════════════════════════════════════════════════════
+
+const getFormatLabel = (format, digits, difficulty) => {
+  const parts = [];
+  if (format) parts.push(`Bo${format}`);
+  if (digits) parts.push(`${digits}D`);
+  if (difficulty === 'hard') parts.push('H');
+  return parts.join(' · ') || 'Bo1';
+};
+
+const getTimeAgo = (date) => {
+  if (!date) return '';
+  const now = new Date();
+  const d = new Date(date);
+  const diffMs = now - d;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHr / 24);
+  
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+// ═══════════════════════════════════════════════════════════
+// PROFILE HEADER SECTION
+// ═══════════════════════════════════════════════════════════
+
+const ProfileSection = ({ user, stats, isOnline = true }) => {
+  const totalGames = stats?.totalGames || 0;
+  const username = user?.username || 'Unknown User';
+  const uid = user?.uid || '#0000';
+
+  return (
+    <div className="text-center mb-4">
+      {/* Avatar with Gradient Ring */}
+      <div className="flex justify-center mb-2">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-primary to-blue-500 p-0.5">
+            <div className="w-full h-full bg-[#111827] rounded-full p-0.5 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center overflow-hidden">
+                <DefaultAvatar />
+              </div>
+            </div>
+          </div>
+          {/* Online Status */}
+          <div className={`absolute bottom-0 right-0 w-4 h-4 border-2 border-[#111827] rounded-full ${isOnline ? 'bg-green-500' : 'bg-slate-600'}`} />
+        </div>
+      </div>
+
+      {/* Username */}
+      <h2 className="text-lg font-bold text-white mb-0.5">{username}</h2>
+      
+      {/* UID Badge */}
+      <div className="inline-flex items-center bg-slate-800 px-2 py-0.5 rounded-full mb-1">
+        <span className="text-primary text-xs font-mono font-bold">{uid}</span>
+      </div>
+      
+      {/* Games Played */}
+      <p className="text-slate-500 text-[10px] font-mono uppercase tracking-wider">
+        {totalGames} {totalGames === 1 ? 'Game' : 'Games'} Played
+      </p>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════
+// STATS BAR COMPONENT (Chess.com Style)
+// ═══════════════════════════════════════════════════════════
+
+const StatsBar = ({ wins = 0, losses = 0 }) => {
+  const total = wins + losses;
+  const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+  const lossRate = total > 0 ? Math.round((losses / total) * 100) : 0;
+  
+  const percentages = useMemo(() => {
+    if (total === 0) return { win: 50, loss: 50 };
+    return {
+      win: (wins / total) * 100,
+      loss: (losses / total) * 100
+    };
+  }, [wins, losses, total]);
+
+  return (
+    <div className="relative rounded-xl overflow-hidden">
+      {/* Glassmorphism Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-800/80 via-slate-900/90 to-slate-800/80 backdrop-blur-xl" />
+      
+      {/* Border */}
+      <div className="absolute inset-0 rounded-xl border border-slate-600/30" />
+      
+      {/* Content */}
+      <div className="relative z-10 px-3 py-2">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-[8px] font-bold uppercase tracking-[0.1em] text-slate-400">
+            Combat Record
+          </h3>
+          <div className="flex items-center gap-1">
+            <div className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="text-[7px] font-mono text-cyan-400/80">LIVE</span>
+          </div>
+        </div>
+
+        {/* Stats Row - Inline */}
+        <div className="flex items-center justify-around mb-2">
+          {/* Victories */}
+          <div className="text-center">
+            <span className="text-[8px] font-mono text-green-500 uppercase">Victories</span>
+            <div className="text-2xl font-black text-white leading-none">{wins}</div>
+            <span className="text-[8px] text-slate-500 font-mono">{winRate}%</span>
+          </div>
+
+          {/* Divider */}
+          <div className="h-8 w-px bg-slate-700" />
+
+          {/* Defeats */}
+          <div className="text-center">
+            <span className="text-[8px] font-mono text-red-500 uppercase">Defeats</span>
+            <div className="text-2xl font-black text-white leading-none">{losses}</div>
+            <span className="text-[8px] text-slate-500 font-mono">{lossRate}%</span>
+          </div>
+        </div>
+
+        {/* Power Gauge - Compact */}
+        <div className="relative h-1.5 rounded-full overflow-hidden bg-slate-900/80">
+          <div 
+            className="absolute top-0 left-0 h-full rounded-l-full"
+            style={{ 
+              width: `${percentages.win}%`,
+              background: 'linear-gradient(90deg, #22c55e 0%, #4ade80 100%)'
+            }}
+          />
+          <div 
+            className="absolute top-0 right-0 h-full rounded-r-full"
+            style={{ 
+              width: `${percentages.loss}%`,
+              background: 'linear-gradient(270deg, #ef4444 0%, #f87171 100%)'
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════
+// OPPONENT PROFILE MODAL (Chess.com inspired)
+// ═══════════════════════════════════════════════════════════
+
+const OpponentProfileModal = ({ opponentId, onClose }) => {
+  const { getUserById, sendFriendRequest } = useAuthStore();
+  const { addToast } = useToastStore();
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [requestSent, setRequestSent] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchProfile = async () => {
+      try {
+        const data = await getUserById(opponentId);
+        if (mounted) setProfile(data);
+      } catch {
+        if (mounted) addToast('Could not load player profile', 'error');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    fetchProfile();
+    return () => { mounted = false; };
+  }, [opponentId, getUserById, addToast]);
+
+  const handleSendRequest = async () => {
+    if (!profile?.uid) return;
+    setActionLoading(true);
+    try {
+      await sendFriendRequest(profile.uid);
+      setRequestSent(true);
+      addToast(`Friend request sent to ${profile.username}!`, 'success');
+    } catch (err) {
+      addToast(err.message || 'Failed to send request', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const stats = profile?.stats || {};
+  const totalGames = stats.totalGames || 0;
+  const wins = stats.wins || 0;
+  const losses = stats.losses || 0;
+  const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-[#1a2332] rounded-2xl w-full max-w-sm border border-slate-700/50 shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          </div>
+        ) : profile ? (
+          <>
+            {/* Header gradient bar */}
+            <div className="h-1.5 bg-gradient-to-r from-primary via-blue-500 to-purple-500" />
+            
+            <div className="p-5">
+              {/* Player Info */}
+              <div className="flex items-center gap-4 mb-5">
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/30 to-blue-500/30 p-0.5">
+                    <div className="w-full h-full bg-[#1a2332] rounded-full flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center overflow-hidden">
+                        <DefaultAvatar />
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-[#1a2332] rounded-full ${
+                    profile.isOnline ? 'bg-green-500' : 'bg-slate-600'
+                  }`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-white truncate">{profile.username}</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-primary text-xs font-mono font-bold">{profile.uid}</span>
+                    {profile.isOnline && (
+                      <span className="text-green-400 text-[10px] font-mono uppercase">Online</span>
+                    )}
+                  </div>
+                </div>
+                <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors p-1">
+                  <CloseIcon />
+                </button>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-3 gap-2 mb-5">
+                <div className="bg-slate-800/50 rounded-xl p-3 text-center border border-slate-700/30">
+                  <div className="text-xl font-black text-white">{totalGames}</div>
+                  <div className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">Games</div>
+                </div>
+                <div className="bg-slate-800/50 rounded-xl p-3 text-center border border-green-500/10">
+                  <div className="text-xl font-black text-green-400">{wins}</div>
+                  <div className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">Wins</div>
+                </div>
+                <div className="bg-slate-800/50 rounded-xl p-3 text-center border border-red-500/10">
+                  <div className="text-xl font-black text-red-400">{losses}</div>
+                  <div className="text-[9px] font-mono text-slate-500 uppercase tracking-wider">Losses</div>
+                </div>
+              </div>
+
+              {/* Win Rate Bar */}
+              <div className="mb-5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Win Rate</span>
+                  <span className="text-sm font-bold text-white">{winRate}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${winRate}%`,
+                      background: winRate >= 50
+                        ? 'linear-gradient(90deg, #22c55e 0%, #4ade80 100%)'
+                        : 'linear-gradient(90deg, #ef4444 0%, #f87171 100%)'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Member Since */}
+              {profile.createdAt && (
+                <div className="text-center mb-5">
+                  <span className="text-[10px] font-mono text-slate-600 uppercase tracking-wider">
+                    Joined {new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              {!profile.isSelf && (
+                <div className="space-y-2">
+                  {profile.isFriend ? (
+                    <div className="w-full py-2.5 bg-green-500/10 text-green-400 rounded-xl text-sm font-bold text-center border border-green-500/20">
+                      ✓ Already Friends
+                    </div>
+                  ) : profile.hasPendingRequest || requestSent ? (
+                    <div className="w-full py-2.5 bg-primary/10 text-primary rounded-xl text-sm font-bold text-center border border-primary/20">
+                      Request Sent
+                    </div>
+                  ) : profile.hasIncomingRequest ? (
+                    <div className="w-full py-2.5 bg-blue-500/10 text-blue-400 rounded-xl text-sm font-bold text-center border border-blue-500/20">
+                      Pending Your Approval
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleSendRequest}
+                      disabled={actionLoading}
+                      className="w-full py-2.5 bg-primary hover:bg-yellow-400 text-black rounded-xl text-sm font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {actionLoading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black" />
+                      ) : (
+                        <>
+                          <AddUserIcon />
+                          <span>Send Friend Request</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="p-8 text-center">
+            <div className="text-4xl mb-3">👤</div>
+            <p className="text-slate-400 text-sm">Player not found</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════
+// FRIEND SEARCH MODAL
+// ═══════════════════════════════════════════════════════════
+
+const FriendSearchModal = ({ onClose, onRequestSent }) => {
+  const { searchUsers, sendFriendRequest } = useAuthStore();
+  const { addToast } = useToastStore();
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [sentRequests, setSentRequests] = useState(new Set());
+
+  const handleSearch = async () => {
+    if (query.length < 2) return;
+    
+    setLoading(true);
+    setError('');
+    try {
+      const users = await searchUsers(query);
+      setResults(users);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendRequest = async (uid) => {
+    try {
+      await sendFriendRequest(uid);
+      setSentRequests(prev => new Set([...prev, uid]));
+      addToast('Friend request sent!', 'success');
+      if (onRequestSent) onRequestSent();
+    } catch (err) {
+      setError(err.message);
+      addToast(err.message, 'error');
+    }
+  };
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[#1a2332] rounded-2xl p-5 w-full max-w-sm border border-slate-700/50 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-lg font-bold text-white mb-4 uppercase tracking-wider">
+          Find Players
+        </h2>
+        
+        {/* Search Input */}
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            placeholder="Username or UID (#1234)"
+            className="flex-1 bg-slate-800/80 border border-slate-600/50 rounded-xl px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-primary/60 transition-colors"
+          />
+          <button
+            onClick={handleSearch}
+            disabled={loading || query.length < 2}
+            className="bg-primary hover:bg-yellow-400 text-black px-4 py-2.5 rounded-xl font-bold transition-colors disabled:opacity-50"
+          >
+            <SearchIcon />
+          </button>
+        </div>
+
+        {error && (
+          <div className="text-red-400 text-xs font-mono mb-3">{error}</div>
+        )}
+
+        {/* Results */}
+        <div className="space-y-2 max-h-52 overflow-y-auto">
+          {loading ? (
+            <div className="text-center py-6">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto" />
+            </div>
+          ) : results.length > 0 ? (
+            results.map((user) => (
+              <div
+                key={user._id}
+                className="flex items-center justify-between bg-slate-800/30 rounded-xl p-3 border border-slate-700/30"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-semibold text-sm">{user.username}</span>
+                    <span className="text-primary text-xs font-mono">{user.uid}</span>
+                  </div>
+                  <div className="text-slate-500 text-xs font-mono">
+                    {user.stats?.wins || 0}W · {user.stats?.totalGames || 0} Games
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleSendRequest(user.uid)}
+                  disabled={sentRequests.has(user.uid)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${
+                    sentRequests.has(user.uid)
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-primary/20 text-primary hover:bg-primary/30'
+                  }`}
+                >
+                  {sentRequests.has(user.uid) ? 'Sent' : 'Add'}
+                </button>
+              </div>
+            ))
+          ) : query.length >= 2 && !loading ? (
+            <div className="text-slate-500 text-center py-6 text-sm">No players found</div>
+          ) : (
+            <div className="text-slate-600 text-center py-6 text-xs font-mono">
+              Search by username or UID (e.g., #1234)
+            </div>
+          )}
+        </div>
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="w-full mt-4 py-2.5 bg-slate-700/50 hover:bg-slate-600/50 text-white rounded-xl font-semibold transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════
+// MATCH HISTORY ITEM (Modern, clickable opponent)
+// ═══════════════════════════════════════════════════════════
+
+const MatchHistoryItem = ({ match, onOpponentClick }) => {
+  const isWin = match.result === 'win';
+
+  return (
+    <div className={`
+      relative group rounded-xl border overflow-hidden transition-all duration-200
+      ${isWin
+        ? 'bg-gradient-to-r from-green-500/[0.08] to-green-500/[0.02] border-green-500/20 hover:border-green-500/40'
+        : 'bg-gradient-to-r from-red-500/[0.08] to-red-500/[0.02] border-red-500/20 hover:border-red-500/40'
+      }
+    `}>
+      {/* Left accent bar */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1 ${isWin ? 'bg-green-500' : 'bg-red-500'}`} />
+
+      <div className="flex items-center justify-between p-3 pl-4">
+        {/* Left: Result + Opponent */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          {/* Result Badge */}
+          <div className={`
+            w-9 h-9 rounded-lg flex items-center justify-center font-black text-sm shrink-0
+            ${isWin
+              ? 'bg-green-500/20 text-green-400'
+              : 'bg-red-500/20 text-red-400'
+            }
+          `}>
+            {isWin ? 'W' : 'L'}
+          </div>
+
+          {/* Opponent Name (clickable) */}
+          <div className="min-w-0 flex-1">
+            <button
+              onClick={() => match.opponent && onOpponentClick(match.opponent)}
+              className={`
+                text-sm font-semibold truncate block max-w-[160px] text-left transition-colors
+                ${match.opponent
+                  ? 'text-white hover:text-primary cursor-pointer'
+                  : 'text-slate-400 cursor-default'
+                }
+              `}
+              disabled={!match.opponent}
+              title={match.opponent ? 'View profile' : ''}
+            >
+              {match.opponentName || 'Unknown'}
+            </button>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] font-mono text-slate-500">
+                {getFormatLabel(match.format, match.digits, match.difficulty)}
+              </span>
+              {match.playedAt && (
+                <>
+                  <span className="text-slate-700">·</span>
+                  <span className="text-[10px] font-mono text-slate-600">
+                    {getTimeAgo(match.playedAt)}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Score */}
+        <div className={`
+          text-right font-mono font-bold text-base shrink-0 ml-2
+          ${isWin ? 'text-green-400' : 'text-red-400'}
+        `}>
+          {match.score || '0-0'}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════
+// FRIEND ITEM
+// ═══════════════════════════════════════════════════════════
+
+const FriendItem = ({ friend, onInvite }) => {
+  return (
+    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/20 border border-slate-700/30 hover:border-slate-600/50 transition-colors">
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden text-slate-400">
+            <DefaultAvatar className="w-6 h-6" />
+          </div>
+          <div className="absolute -bottom-0.5 -right-0.5">
+            {friend.isOnline ? <OnlineIcon /> : <OfflineIcon />}
+          </div>
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-white font-semibold text-sm">{friend.username}</span>
+            <span className="text-primary text-xs font-mono">{friend.uid}</span>
+          </div>
+          <div className="text-slate-500 text-xs font-mono">
+            {friend.stats?.wins || 0}W / {friend.stats?.totalGames || 0}G
+          </div>
+        </div>
+      </div>
+      <button
+        onClick={() => onInvite(friend)}
+        disabled={!friend.isOnline}
+        className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
+          friend.isOnline
+            ? 'border border-primary/50 text-primary hover:bg-primary hover:text-black'
+            : 'border border-slate-600 text-slate-500 cursor-not-allowed'
+        }`}
+      >
+        Invite
+      </button>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════
+// FRIEND REQUEST ITEM
+// ═══════════════════════════════════════════════════════════
+
+const FriendRequestItem = ({ request, onAccept, onReject }) => {
+  const user = request.from;
+  
+  return (
+    <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/15">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden text-primary">
+          <DefaultAvatar className="w-6 h-6" />
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-white font-semibold text-sm">{user?.username || 'Unknown'}</span>
+            <span className="text-primary text-xs font-mono">{user?.uid}</span>
+          </div>
+          <div className="text-slate-500 text-xs font-mono">Wants to be allies</div>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onAccept(user._id)}
+          className="p-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors"
+        >
+          <CheckIcon />
+        </button>
+        <button
+          onClick={() => onReject(user._id)}
+          className="p-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+        >
+          <XIcon />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════
+// MAIN PROFILE PAGE COMPONENT
+// ═══════════════════════════════════════════════════════════
+
+const ProfilePage = () => {
+  const navigate = useNavigate();
+  const { addToast } = useToastStore();
+  const { 
+    user, 
+    getProfile, 
+    getFriends, 
+    getPendingRequests,
+    acceptFriendRequest,
+    rejectFriendRequest
+  } = useAuthStore();
+  
+  const [activeTab, setActiveTab] = useState('history');
+  const [profile, setProfile] = useState(null);
+  const [friends, setFriends] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState({ incoming: [], outgoing: [] });
+  const [loading, setLoading] = useState(true);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
+  const [selectedOpponentId, setSelectedOpponentId] = useState(null);
+
+  // Core data fetcher
+  const fetchData = useCallback(async (showLoader = true) => {
+    try {
+      if (showLoader) setLoading(true);
+      setFetchError(null);
+      
+      const profileData = await getProfile();
+      setProfile(profileData);
+      
+      try {
+        const [friendsData, requestsData] = await Promise.all([
+          getFriends(),
+          getPendingRequests()
+        ]);
+        setFriends(friendsData || []);
+        setPendingRequests(requestsData || { incoming: [], outgoing: [] });
+      } catch (friendError) {
+        console.warn('Could not fetch friends data:', friendError);
+        setFriends([]);
+        setPendingRequests({ incoming: [], outgoing: [] });
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile data:', error);
+      const is401 = error.response?.status === 401;
+      if (is401) {
+        localStorage.removeItem('token');
+        setFetchError('Session expired. Please log in again.');
+      } else {
+        setFetchError(error.message || 'Failed to load profile');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [getProfile, getFriends, getPendingRequests]);
+
+  // Initial fetch
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/auth');
+      return;
+    }
+    fetchData();
+  }, [navigate, fetchData]);
+
+  // Auto-refresh when page regains focus (e.g. after a game ends)
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchData(false); // Silent refresh (no loader)
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [fetchData]);
+
+  // Also auto-refresh on visibility change (tab switch back)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData(false);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [fetchData]);
+
+  const handleAcceptRequest = async (requesterId) => {
+    try {
+      const result = await acceptFriendRequest(requesterId);
+      addToast(`${result.friend?.username || 'User'} is now your ally!`, 'success');
+      
+      const [friendsData, requestsData] = await Promise.all([
+        getFriends(),
+        getPendingRequests()
+      ]);
+      setFriends(friendsData);
+      setPendingRequests(requestsData);
+    } catch (error) {
+      console.error('Failed to accept request:', error);
+      addToast('Failed to accept friend request', 'error');
+    }
+  };
+
+  const handleRejectRequest = async (requesterId) => {
+    try {
+      await rejectFriendRequest(requesterId);
+      addToast('Friend request declined', 'info');
+      
+      const requestsData = await getPendingRequests();
+      setPendingRequests(requestsData);
+    } catch (error) {
+      console.error('Failed to reject request:', error);
+      addToast('Failed to reject friend request', 'error');
+    }
+  };
+
+  const handleInviteFriend = (friend) => {
+    navigate('/online/setup', { state: { inviteFriend: friend } });
+  };
+
+  const handleOpponentClick = (opponentId) => {
+    if (opponentId) {
+      setSelectedOpponentId(typeof opponentId === 'object' ? opponentId._id || opponentId : opponentId);
+    }
+  };
+
+  const stats = profile?.stats || { wins: 0, losses: 0, totalGames: 0 };
+  const matchHistory = profile?.matchHistory || [];
+
+  return (
+    <div className="min-h-screen bg-[#111827] flex flex-col font-space relative overflow-hidden">
+      {/* Scanlines Overlay */}
+      <div className="scanlines" />
+
+      {/* Content Container */}
+      <div className="relative z-10 flex-1 flex flex-col max-w-md mx-auto w-full shadow-2xl bg-[#111827]">
+        
+        {/* ─── HEADER ─── */}
+        <header className="py-4 pt-8 px-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/home')}
+              className="bg-white/5 p-2 rounded-full backdrop-blur-sm hover:bg-white/10 transition-all text-slate-300"
+            >
+              <BackIcon />
+            </button>
+            <h1 className="text-lg font-bold text-white uppercase tracking-wider">Profile</h1>
+          </div>
+          <button
+            onClick={() => setShowSearchModal(true)}
+            className="bg-primary/20 p-2 rounded-full text-primary hover:bg-primary/30 transition-colors"
+            title="Find Players"
+          >
+            <AddUserIcon />
+          </button>
+        </header>
+
+        {/* ─── MAIN CONTENT ─── */}
+        <main className="flex-1 px-4 pb-4 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : fetchError ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="text-5xl mb-4">⚠️</div>
+              <p className="text-slate-400 text-sm mb-4 text-center">{fetchError}</p>
+              <div className="flex gap-3">
+                {fetchError.includes('Session') || fetchError.includes('expired') ? (
+                  <button
+                    onClick={() => navigate('/auth')}
+                    className="bg-primary text-black px-5 py-2.5 rounded-xl text-sm font-bold uppercase tracking-wider"
+                  >
+                    Go to Login
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="bg-primary/20 text-primary px-5 py-2.5 rounded-xl text-sm font-bold uppercase tracking-wider"
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Profile Section */}
+              <ProfileSection 
+                user={profile || user}
+                stats={stats}
+                isOnline={true}
+              />
+
+              {/* Stats Bar */}
+              <div className="mb-6">
+                <StatsBar 
+                  wins={stats.wins} 
+                  losses={stats.losses} 
+                />
+              </div>
+
+              {/* Tab Navigation - Cyber Underline Style */}
+              <div className="flex w-full border-b border-white/10 mb-5">
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className={`flex-1 text-center py-3 text-sm font-bold tracking-widest cursor-pointer transition-all relative ${
+                    activeTab === 'history'
+                      ? 'text-white'
+                      : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  HISTORY
+                  {activeTab === 'history' && (
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-primary shadow-[0_-2px_10px_rgba(250,204,20,0.5)]" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('allies')}
+                  className={`flex-1 text-center py-3 text-sm font-bold tracking-widest cursor-pointer transition-all relative ${
+                    activeTab === 'allies'
+                      ? 'text-white'
+                      : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  ALLIES
+                  {activeTab === 'allies' && (
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-primary shadow-[0_-2px_10px_rgba(250,204,20,0.5)]" />
+                  )}
+                  {pendingRequests.incoming.length > 0 && (
+                    <span className="absolute top-1 right-4 w-5 h-5 bg-red-500 rounded-full text-white text-[10px] flex items-center justify-center">
+                      {pendingRequests.incoming.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div className="space-y-2.5">
+                {activeTab === 'history' ? (
+                  matchHistory.length > 0 ? (
+                    <>
+                      {/* History header */}
+                      <div className="flex items-center justify-between mb-1 px-1">
+                        <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                          Recent Matches
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-600">
+                          {matchHistory.length} total
+                        </span>
+                      </div>
+                      {matchHistory.slice(0, 20).map((match, index) => (
+                        <MatchHistoryItem
+                          key={match._id || index}
+                          match={match}
+                          onOpponentClick={handleOpponentClick}
+                        />
+                      ))}
+                    </>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="text-5xl mb-4">🎮</div>
+                      <p className="text-slate-400 text-sm font-semibold">No matches yet</p>
+                      <p className="text-slate-600 text-xs mt-1 font-mono">Play online to build your history</p>
+                      <button
+                        onClick={() => navigate('/home')}
+                        className="mt-4 px-5 py-2 bg-primary/20 text-primary rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-primary/30 transition-colors"
+                      >
+                        Play Now
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <>
+                    {/* Incoming Requests */}
+                    {pendingRequests.incoming.length > 0 && (
+                      <div className="mb-4">
+                        <h3 className="text-xs font-bold text-primary uppercase tracking-widest mb-3">
+                          Incoming Requests
+                        </h3>
+                        <div className="space-y-2">
+                          {pendingRequests.incoming.map((request, index) => (
+                            <FriendRequestItem
+                              key={index}
+                              request={request}
+                              onAccept={handleAcceptRequest}
+                              onReject={handleRejectRequest}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Friends List */}
+                    {friends.length > 0 ? (
+                      friends.map((friend) => (
+                        <FriendItem 
+                          key={friend._id} 
+                          friend={friend} 
+                          onInvite={handleInviteFriend}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="text-5xl mb-4">👥</div>
+                        <p className="text-slate-400 text-sm font-semibold">No allies yet</p>
+                        <button
+                          onClick={() => setShowSearchModal(true)}
+                          className="text-primary text-xs mt-2 hover:underline font-mono"
+                        >
+                          [ SEARCH FOR PLAYERS ]
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </main>
+
+        {/* ─── TECH BORDER FOOTER ─── */}
+        <div className="mt-auto pt-4 pb-4 px-4 flex justify-between items-end opacity-20">
+          <div className="h-12 w-12 border-l-2 border-b-2 border-white rounded-bl-xl"></div>
+          <div className="font-mono text-[10px] text-center text-white">
+            PROFILE DATA<br/>LOADED
+          </div>
+          <div className="h-12 w-12 border-r-2 border-b-2 border-white rounded-br-xl"></div>
+        </div>
+      </div>
+
+      {/* ─── SEARCH MODAL ─── */}
+      {showSearchModal && (
+        <FriendSearchModal 
+          onClose={() => setShowSearchModal(false)} 
+          onRequestSent={async () => {
+            try {
+              const requestsData = await getPendingRequests();
+              setPendingRequests(requestsData);
+            } catch (error) {
+              console.error('Failed to refresh requests:', error);
+            }
+          }}
+        />
+      )}
+
+      {/* ─── OPPONENT PROFILE MODAL ─── */}
+      {selectedOpponentId && (
+        <OpponentProfileModal
+          opponentId={selectedOpponentId}
+          onClose={() => setSelectedOpponentId(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default ProfilePage;
