@@ -2,7 +2,7 @@
 
 A real-time multiplayer number guessing game with cyberpunk aesthetics.
 
-🌐 **[Play Now](https://bulls-cows-pied.vercel.app/)** | [API Docs](API_REFERENCE.md) | [WebSocket Docs](WEBSOCKET_EVENTS.md)
+🌐 **[Play Now](https://bulls-cows-pied.vercel.app/)** | [API & WebSocket Docs](documentation/API_REFERENCE.md)
 
 ## 🎮 What is it?
 
@@ -52,7 +52,6 @@ cd Frontend && npm run dev
 ```
 ## 📚 Documentation
 
-- [Technical Documentation](TECHNICAL_DOCUMENTATION.md) - Detailed file-by-file code explanations
-- [API Reference](API_REFERENCE.md) - Endpoints, request/response formats
-- [WebSocket Events](WEBSOCKET_EVENTS.md) - Real-time communication protocols
+- [Technical Documentation](documentation/TECHNICAL_DOCUMENTATION.md) - Detailed file-by-file code explanations
+- [API Reference](documentation/API_REFERENCE.md) - REST endpoints and WebSocket events (request/response formats, real-time protocols)
 ```
